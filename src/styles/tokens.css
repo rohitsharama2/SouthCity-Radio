@@ -1,0 +1,30 @@
+/* Brand primitives → semantic tokens → shared components. Change this file to retheme. */
+:root {
+  --brand: #ec622b;
+  --brand-hover: #ce4b19;
+  --brand-soft: #fae9de;
+  --canvas: #f8f7f4;
+  --surface: #ffffff;
+  --surface-alt: #efeee9;
+  --ink: #242622;
+  --muted: #868780;
+  --line: #e7e6df;
+  --on-brand: #ffffff;
+  --success: #4f7961;
+  --danger: #b84438;
+  --sidebar-width: 224px;
+  --player-height: 86px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 99px;
+  --font-body: 'DM Sans', sans-serif;
+  --font-display: 'Manrope', sans-serif;
+  --shadow-floating: 0 12px 55px #24262218;
+  --motion-fast: 180ms;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px; --space-7: 48px;
+}
+[data-theme='dark'] {
+  --canvas: #161915; --surface: #20241f; --surface-alt: #2b3029; --ink: #f0f0e9;
+  --muted: #a0a79a; --line: #353b31; --brand-soft: #483021; --success: #99c7a3;
+}
