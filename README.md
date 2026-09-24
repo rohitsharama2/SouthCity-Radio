@@ -1,0 +1,125 @@
+# SouthCity Radio
+
+**Your city. Your sound.** A premium, responsive radio product with an independent consumer identity and a separate broadcast operations workspace.
+
+This repository contains a working **React web prototype**, optimized for mobile and desktop. It is not a native iOS/Android application or a connected Centova Cast management client. All administrative mutations are local drafts; no live station is changed.
+
+## Run locally
+
+Requires Node.js 20.19+ or 22.12+ and npm.
+
+```sh
+npm ci
+npm run dev
+```
+
+Open the URL printed by Vite. Production output:
+
+```sh
+npm run build
+npm run preview
+```
+
+## What's included
+
+| Area              | Implemented experience                                                                                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home              | Editorial hero, spotlight show, continue listening, live stations, genre cards, recommendations, popularity                                                                               |
+| Discover / Search | Search by station, show, track, artist, and host; combined genre/language filters; empty results; Cmd/Ctrl+K                                                                              |
+| Live              | Live station catalog, listener counts, programming schedule                                                                                                                               |
+| Station           | Artwork, follow, listen, sample metadata, schedule, hosts, recent tracks, related stations                                                                                                |
+| Show              | Description, host, broadcast slot, local follow and reminder preference, recorded-content empty state                                                                                     |
+| Player            | Real external preview audio, play/pause, persistent mini-player, full player, volume/mute, station switching, share, sleep timer, Media Session handlers                                  |
+| Library           | Persistent favorite stations, followed shows, actual local station history; honest empty states for episodes and downloads                                                                |
+| Profile           | Editable local name, notification preference, appearance, listening counts, privacy reset, help                                                                                           |
+| Welcome           | Two-step onboarding available from Profile; splash specimen in the component gallery                                                                                                      |
+| Admin             | Dashboard, station configuration drafts, monitoring, AutoDJ preference, playlist create/delete, local media selection, schedule drafts, DJs/users drafts, sample analytics and CSV export |
+| Design system     | Live palette previews, typography, shared cards and controls, audio states, skeletons, loading/error/empty states, dialog and splash specimens                                            |
+
+**Open admin:** Profile → Creator & admin portal, desktop sidebar, or `/#admin`.
+
+**Open the design system:** Profile → Design system & component gallery.
+
+**Try onboarding:** Profile → Welcome to SouthCity. It does not interrupt returning listeners.
+
+## Change the look centrally
+
+1. Edit [`src/styles/tokens.css`](src/styles/tokens.css) for brand colors, surfaces, text, spacing primitives, radii, fonts, motion, and dark-mode values.
+2. Edit [`src/components/ui.jsx`](src/components/ui.jsx) for shared buttons, station cards, artwork, badges, dialogs, skeletons, and feedback states.
+3. Adjust shared layout rules in [`src/styles/app.css`](src/styles/app.css). Admin-specific rules live in [`src/styles/admin.css`](src/styles/admin.css).
+4. Review mobile, desktop, dark mode, full player, and admin after any theme change.
+
+Consumer and admin share semantic tokens but intentionally use different density, navigation, and component treatments. Station artwork has independent editorial colors; recolor the artwork rules separately when changing the entire art direction. The gallery's palette controls are session-only previews.
+
+See [design system guidance](docs/DESIGN_SYSTEM.md) and [feature and production handoff](docs/FEATURES.md).
+
+## Architecture
+
+```text
+src/
+  App.jsx                     Consumer navigation and feature screens
+  components/
+    ui.jsx                    Shared visual components and dialog behavior
+    AudioProvider.jsx         Persistent HTMLAudioElement + Media Session
+    Admin.jsx                 Separate operations workspace
+    DesignSystem.jsx          Interactive component and state gallery
+  data/
+    stations.js               Illustrative catalog, schedule, search filtering
+    stations.test.js          Search/filter behavior tests
+  styles/
+    tokens.css                Central brand and semantic tokens
+    app.css                   Consumer and shared component styling
+    admin.css                 Operations-specific layout and styling
+```
+
+The audio provider wraps both workspaces. Navigation does not recreate the audio element. Local preferences and drafts use namespaced `localStorage` keys; selected media files are kept only as metadata in memory. There is no login server or authorization layer in this prototype.
+
+## Audio and data honesty
+
+- **Audio is real; station identity and metadata are sample content.** Preview streams are publicly accessible SomaFM streams. The app labels this in the player; displayed track/show metadata is illustrative and does not identify the audio actually playing.
+- Playing, paused, connecting, buffering, network error, offline, and unavailable states are represented. Network and playback events drive the player; every state can also be inspected in the design gallery.
+- Listen history records selected stations, not verified completed listening sessions.
+- Browser playback can continue while navigating and supports compatible system media controls. **Reliable native background playback, interruptions, lock-screen artwork, Bluetooth routing, and Android foreground services require native integration and device testing.**
+- Favorites, profile, shows, and theme survive browser refresh. Accounts, push notifications, downloads, recorded episodes, entitlement enforcement, and cross-device sync are not implemented.
+- Photos load from Unsplash, avatars from Pravatar, and fonts from Google Fonts. Replace remote samples with owned/approved, self-hosted assets before release.
+
+## Centova Cast boundary
+
+Centova Cast remains server-side infrastructure. Do not embed its administration UI or send its credentials to a browser/mobile client. The future app API will normalize station data, metadata, schedules, listeners, and stream health into independent product models.
+
+The proposed API, real-time update contract, deployment boundaries, and production checklist are in [docs/INTEGRATION.md](docs/INTEGRATION.md). These are application-facing contracts to implement, **not claims about Centova Cast endpoint names**. The exact installed Centova Cast version and licensed capabilities must be verified before connecting.
+
+## Feature and review skills
+
+Repository-specific skills are in [`skills/`](skills/). [`AGENTS.md`](AGENTS.md) routes future coding agents to the relevant skill. These files are checked into the repository; they are not installed globally.
+
+| Skill                       | Use for                                                   |
+| --------------------------- | --------------------------------------------------------- |
+| `southcity-discovery`       | Home, Discover, search, genres, station/show detail       |
+| `southcity-audio`           | Audio lifecycle, player states, sleep, system controls    |
+| `southcity-library-profile` | Favorites, shows, history, profile, preferences           |
+| `southcity-admin`           | Operations screens and safe draft/production boundaries   |
+| `southcity-centova`         | Server adapter, metadata, schedules, stream integration   |
+| `southcity-theme`           | Rebranding through tokens and shared components           |
+| `southcity-design-review`   | Responsive, visual, interaction, and accessibility review |
+| `southcity-code-review`     | Functional, architecture, security, and regression review |
+
+## Verification
+
+```sh
+npm test                # search/filter behavior
+npm run test:e2e        # desktop + mobile Chrome tests
+npm run build           # production compilation
+npm run format:check    # formatting
+```
+
+Browser tests use locally installed Google Chrome (`channel: 'chrome'`). Install Chrome before running them; on CI you can install it with `npx playwright install chrome`. Playwright starts Vite automatically. Test artifacts are ignored by Git. Tests cover discovery, persistence, station/show following, stream-error recovery, timer settings, theming, configuration drafts, playlists, schedules, analytics, and viewport overflow.
+
+## Phase history
+
+1. Foundation: brand tokens, catalog, shared primitives, persistent audio provider.
+2. Consumer: responsive discovery, listening, library, station/show and profile screens.
+3. Admin: distinct operations portal and interactive local management drafts.
+4. Handoff: component gallery, feature skills, documentation, formatting, automated verification.
+
+Phase commits are maintained in Git. No production deployment or live backend mutation is performed by this project.

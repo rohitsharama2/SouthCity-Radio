@@ -3,7 +3,23 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": {"dev": "vite --host 0.0.0.0", "build": "vite build", "preview": "vite preview --host 0.0.0.0", "test": "node --test src/data/*.test.js"},
-  "dependencies": {"react": "^19.0.0", "react-dom": "^19.0.0", "lucide-react": "^0.468.0"},
-  "devDependencies": {"vite": "^6.1.0"}
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "node --test src/data/*.test.js",
+    "test:e2e": "playwright test",
+    "format": "prettier --write src tests docs skills README.md AGENTS.md playwright.config.js package.json index.html",
+    "format:check": "prettier --check src tests docs skills README.md AGENTS.md playwright.config.js package.json index.html"
+  },
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "prettier": "^3.9.9",
+    "vite": "^6.1.0"
+  }
 }
