@@ -10,20 +10,17 @@ Requires Node.js 20.19+ or 22.12+ and npm.
 
 ```sh
 npm ci
-npm run dev:app
+npm run dev
 ```
 
-Consumer/mobile preview: **http://localhost:5180**.
+This starts both development servers in one terminal, with each line of output labelled `[app]` or `[admin]`:
 
-Start the admin dashboard in another terminal:
+- Consumer/mobile preview: **http://localhost:5180**
+- Admin dashboard: **http://localhost:5181** (opens Dashboard directly)
 
-```sh
-npm run dev:admin
-```
+Ctrl+C stops both. If either server fails to start or exits, the other one is stopped too. To run just one server, use `npm run dev:app` or `npm run dev:admin`.
 
-Admin dashboard: **http://localhost:5181** (opens Dashboard directly).
-
-`npm run dev` is an alias for the consumer app. Both servers use strict ports: if a port is occupied, startup fails instead of silently moving to another port. Change both port assignments centrally in `src/data/workspaces.js`; server configuration, workspace navigation, and browser tests share those values. Ports 3000 and 5173 are not used.
+Both servers use strict ports: if a port is occupied, startup fails instead of silently moving to another port. Change both port assignments centrally in `src/data/workspaces.js`; server configuration, workspace navigation, and browser tests share those values. Ports 3000 and 5173 are not used.
 
 Workspace links navigate between these two development origins. Each origin has separate browser storage; crossing between them reloads the page and stops consumer audio. Ordinary navigation within the consumer app still preserves playback.
 

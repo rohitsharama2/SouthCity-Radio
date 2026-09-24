@@ -4,13 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run dev:app",
+    "dev": "node scripts/dev.js",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test src/data/*.test.js",
     "test:e2e": "playwright test",
-    "format": "prettier --write src server tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
-    "format:check": "prettier --check src server tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
+    "format": "prettier --write src server scripts tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
+    "format:check": "prettier --check src server scripts tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
     "dev:app": "vite",
     "dev:admin": "vite --mode admin"
   },
