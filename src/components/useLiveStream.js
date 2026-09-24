@@ -6,6 +6,7 @@ import {
   parseHistory,
   validateLiveStation,
 } from '../data/liveStream.js';
+import { accessToken } from './useAccount.js';
 
 // One shared poller for the live station. Every consumer reads the same snapshot, polling
 // runs only while something is subscribed, and last-known metadata survives failed polls.
@@ -89,10 +90,15 @@ export function useLiveStream(enabled = true) {
 export const refreshLiveStream = () => poll();
 export async function publishLiveStation(values, { force = false } = {}) {
   let response, body;
+  // With accounts configured the server checks this session's role before saving.
+  const token = await accessToken();
   try {
     response = await fetch(liveEndpoints.config, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
       body: JSON.stringify({ ...values, force }),
     });
     body = await response.json();

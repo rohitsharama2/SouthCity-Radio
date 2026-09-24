@@ -9,8 +9,9 @@ import {
 
 // Local SouthCity server for the Vite dev and preview servers. It publishes SouthCity Live's
 // settings from the admin workspace to the consumer app and proxies the stream's public
-// metadata, which has no CORS headers. It is not production auth: writes are accepted only
-// from this machine. Production needs the authenticated SouthCity API (docs/INTEGRATION.md).
+// metadata, which has no CORS headers. With Supabase accounts configured (server/accounts.js),
+// publishing needs a station manager or administrator session. Without them, writes are
+// accepted only from this machine.
 const configFile = path.resolve('.local/live-station.json');
 const metadataPaths = ['/stats', '/played'];
 
@@ -68,8 +69,11 @@ async function readBody(req, limit = 10000) {
   }
   return JSON.parse(body);
 }
-async function publish(req, res) {
-  if (!isLoopback(req.socket.remoteAddress))
+async function publish(req, res, accounts) {
+  if (accounts?.configured) {
+    const { status, error } = await accounts.authorizePublish(req);
+    if (error) return send(res, status, { error });
+  } else if (!isLoopback(req.socket.remoteAddress))
     return send(res, 403, { error: 'Publish from the admin workspace on this computer.' });
   const origin = req.headers.origin;
   if (origin && new URL(origin).hostname !== new URL(`http://${req.headers.host}`).hostname)
@@ -102,12 +106,12 @@ async function proxyMetadata(url, res) {
     send(res, 502, { error: 'The station server did not respond.' });
   }
 }
-async function handle(req, res, next) {
+async function handle(req, res, next, accounts) {
   const url = new URL(req.url, 'http://localhost');
   try {
     if (url.pathname === liveEndpoints.config) {
       if (req.method === 'GET') return send(res, 200, await readConfig());
-      if (req.method === 'PUT') return await publish(req, res);
+      if (req.method === 'PUT') return await publish(req, res, accounts);
       return send(res, 405, { error: 'Method not allowed' });
     }
     if (url.pathname.startsWith(`${liveMetadataPath}/`) && req.method === 'GET')
@@ -117,14 +121,15 @@ async function handle(req, res, next) {
   }
   next();
 }
-export function liveStationServer() {
+export function liveStationServer({ accounts } = {}) {
+  const middleware = (req, res, next) => handle(req, res, next, accounts);
   return {
     name: 'southcity-live-station',
     configureServer(server) {
-      server.middlewares.use(handle);
+      server.middlewares.use(middleware);
     },
     configurePreviewServer(server) {
-      server.middlewares.use(handle);
+      server.middlewares.use(middleware);
     },
   };
 }

@@ -2,7 +2,7 @@
 
 ## Current boundary
 
-There is **no backend connection** in this repository. Catalog data is in `src/data/stations.js`. The one exception to fixture data is **SouthCity Live**: it plays the station's public SHOUTcast stream and polls the public, read-only `/stats` and `/played` endpoints through a same-origin `/live-metadata` proxy. Its name, description, genre, language, and stream URL can be published from the admin through a local, same-machine-only endpoint (`server/liveStation.js`, `/api/live-station`, stored in `.local/live-station.json`). That endpoint is a development stand-in, not an authenticated admin API. The other stations use external preview streams. Admin changes are local drafts, not Centova Cast mutations. Do not turn this prototype into a client that sends privileged Centova Cast credentials from the browser.
+There is **no backend connection** in this repository. Catalog data is in `src/data/stations.js`. The one exception to fixture data is **SouthCity Live**: it plays the station's public SHOUTcast stream and polls the public, read-only `/stats` and `/played` endpoints through a same-origin `/live-metadata` proxy. Its name, description, genre, language, and stream URL can be published from the admin through a local, same-machine-only endpoint (`server/liveStation.js`, `/api/live-station`, stored in `.local/live-station.json`). With Supabase accounts configured, that endpoint requires a station manager or administrator session, verified server-side against Supabase Auth and the `profiles` role (`server/accounts.js`). Without accounts, it accepts writes from the same machine only. Listener follows and profiles are read and written directly from the browser to Supabase, protected by row-level security (`supabase/migrations/`). The other stations use external preview streams. Admin changes are local drafts, not Centova Cast mutations. Do not turn this prototype into a client that sends privileged Centova Cast credentials from the browser.
 
 ## Target topology
 
@@ -61,11 +61,13 @@ Never imply a live human DJ merely because a stream is broadcasting. AutoDJ may 
 | `GET /api/stations/:id/recent-tracks`               | Bounded playback history                            |
 | `GET /api/shows/:id`                                | Show, host, schedule, available episodes            |
 | `GET /api/events`                                   | SSE metadata and stream-health updates              |
-| `GET/PUT /api/me/preferences`                       | Authenticated profile and user preferences          |
-| `GET/POST/DELETE /api/me/follows`                   | Authenticated station and show follows              |
+| `GET/PUT /api/me/preferences`                       | Authenticated profile and user preferences¹         |
+| `GET/POST/DELETE /api/me/follows`                   | Authenticated station and show follows¹             |
 | `/api/admin/stations/*`                             | Protected station configuration/operations          |
 | `/api/admin/playlists/*`, `/media/*`, `/schedule/*` | Protected content management                        |
 | `/api/admin/djs/*`, `/users/*`, `/analytics/*`      | Protected roles, people, reports                    |
+
+¹ Currently served by Supabase's `profiles` and `follows` tables under row-level security rather than SouthCity endpoints. Move them behind the application API if follows need server-side validation against the catalog.
 
 ## Real-time metadata
 
@@ -106,7 +108,7 @@ Test foreground/background switching, device locking, incoming calls, Bluetooth 
 
 - Keep infrastructure credentials in a server secret manager; do not create `VITE_*` secrets.
 - Authenticate users and enforce tenant/station/role permissions on every mutation.
-- Roles should distinguish platform administrator, station manager, DJ, and listener.
+- Roles distinguish platform administrator, station manager, DJ, and listener (the Supabase `app_role` enum). They are network-wide today: a station manager is not yet limited to specific stations, and roles are assigned in SQL, not from the admin.
 - Validate uploads on the server by content, size, quota, format, and malware scanning; browser `accept` is not validation.
 - Use short-lived upload authorization and asynchronous media processing.
 - Make scheduled broadcasts timezone-aware, detect overlaps, and handle daylight-saving changes explicitly where applicable.
@@ -117,6 +119,6 @@ Test foreground/background switching, device locking, incoming calls, Bluetooth 
 
 ## Production work still required
 
-API and database, account authentication, native apps, authorization and admin access protection, actual Centova adapter, real telemetry, image pipeline, streaming resilience, entitlement-aware on-demand/offline support, privacy policy, retention controls, notification service, live schedule correctness, observability, deployment/rollback, contrast and assistive-technology verification, and physical-device background playback testing.
+API and database, station-scoped permissions and an in-app role management screen, publish audit records, account deletion, native apps, actual Centova adapter, real telemetry, image pipeline, streaming resilience, entitlement-aware on-demand/offline support, privacy policy, retention controls, notification service, live schedule correctness, observability, deployment/rollback, contrast and assistive-technology verification, and physical-device background playback testing.
 
 A public deployment of this preview must remain clearly marked as a demo. Never deploy operational controls with client-only authentication.

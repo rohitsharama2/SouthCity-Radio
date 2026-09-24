@@ -1,6 +1,6 @@
 # Working on SouthCity Radio
 
-This is a responsive React/Vite web prototype with separate consumer and admin experiences. Read README.md for current capability boundaries. Keep fixture content and local drafts honest; do not imply a Centova Cast connection, native background support, account security, or successful remote mutation that does not exist.
+This is a responsive React/Vite web prototype with separate consumer and admin experiences. Read README.md for current capability boundaries. Keep fixture content and local drafts honest; do not imply a Centova Cast connection, native background support, account protection beyond what the Supabase setup provides, or successful remote mutation that does not exist.
 
 ## Project skill routing
 
@@ -17,7 +17,7 @@ Read the relevant project SKILL.md before substantial feature work. These are lo
 
 ## Architecture and validation
 
-Brand and semantic colors live in `src/styles/tokens.css`; shared primitives in `src/components/ui.jsx`. The audio provider lives above navigation. Preserve independent station artwork and the distinct operations visual language. No backend credentials belong in client code, browser storage, or Vite environment variables.
+Brand and semantic colors live in `src/styles/tokens.css`; shared primitives in `src/components/ui.jsx`. The audio provider lives above navigation. Preserve independent station artwork and the distinct operations visual language. No backend credentials belong in client code, browser storage, or Vite environment variables. Optional Supabase accounts expose only the public project URL and publishable key, served at runtime from `/api/auth-config`; never a service-role or secret key. Authorization lives in row-level security and server-side role checks, not in hidden UI.
 
 Use `npm test`, appropriate Playwright flows (`npm run test:e2e`), `npm run build`, and `npm run format:check` for meaningful verification. Format with `npm run format`. Browser tests use installed Chrome.
 

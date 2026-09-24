@@ -38,12 +38,18 @@ import {
   Trash2,
   Copy,
   Code2,
+  LogOut,
+  LoaderCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { Brand, Button, IconButton, Modal, Artwork, LiveBadge, EmptyState } from './ui.jsx';
 import { stations, schedule } from '../data/stations.js';
 import '../styles/admin.css';
 import { readLocal as saved, writeLocal } from '../data/storage.js';
 import { useLiveStream, refreshLiveStream, publishLiveStation } from './useLiveStream.js';
+import { useAccount, signOut, retryProfile } from './useAccount.js';
+import { SignInForm } from './SignIn.jsx';
+import { canPublish, isStaff, roleLabels } from '../data/accounts.js';
 import {
   publicStatsUrl,
   stationGenres,
@@ -127,6 +133,19 @@ export default function Admin({ onExit, theme, setTheme }) {
       ]),
     );
   const live = useLiveStream();
+  const account = useAccount();
+  // Without configured accounts the workspace stays the local preview it was; with them, a
+  // staff role is required. The server re-checks the role on every publish.
+  const accountsOn = account.phase !== 'unavailable';
+  const staff = account.phase === 'signed-in' && isStaff(account.profile?.role);
+  const operator = staff
+    ? {
+        name: account.profile.displayName,
+        firstName: account.profile.displayName.split(/\s+/)[0],
+        role: roleLabels[account.profile.role],
+      }
+    : { name: 'Alex Morgan', firstName: 'Alex', role: 'Local preview · no sign-in' };
+  const leave = () => signOut().catch((error) => setToast(error.message));
   const liveState =
     live.phase === 'ready'
       ? live.data.onAir
@@ -520,6 +539,8 @@ export default function Admin({ onExit, theme, setTheme }) {
       </div>
     </>
   );
+  if (accountsOn && !staff)
+    return <StaffGate account={account} onExit={onExit} onSignOut={leave} toast={toast} />;
   return (
     <div className="admin-shell">
       <aside className={`admin-sidebar ${menu ? 'open' : ''}`}>
@@ -570,12 +591,18 @@ export default function Admin({ onExit, theme, setTheme }) {
             <ArrowLeft size={16} /> Back to listening
           </button>
           <div className="admin-user">
-            <span className="avatar">A</span>
+            <span className="avatar">{operator.firstName.slice(0, 1)}</span>
             <span>
-              <strong>Alex Morgan</strong>
-              <small>Workspace administrator</small>
+              <strong>{operator.name}</strong>
+              <small>{operator.role}</small>
             </span>
-            <Settings size={16} />
+            {staff ? (
+              <IconButton label="Sign out" onClick={leave}>
+                <LogOut size={16} />
+              </IconButton>
+            ) : (
+              <Settings size={16} />
+            )}
           </div>
         </div>
       </aside>
@@ -606,7 +633,7 @@ export default function Admin({ onExit, theme, setTheme }) {
             >
               {theme === 'light' ? <Sun size={18} /> : <Moon size={18} />}
             </IconButton>
-            <span className="avatar small">A</span>
+            <span className="avatar small">{operator.firstName.slice(0, 1)}</span>
           </div>
         </header>
         <main className="admin-content">
@@ -615,7 +642,7 @@ export default function Admin({ onExit, theme, setTheme }) {
               <div className="eyebrow">SOUTHCITY OPERATIONS</div>
               <h1>
                 {view === 'Dashboard'
-                  ? 'Good afternoon, Alex.'
+                  ? `Good afternoon, ${operator.firstName}.`
                   : view === 'Station Management'
                     ? stationName(station)
                     : view === 'Live Streams'
@@ -938,6 +965,9 @@ export default function Admin({ onExit, theme, setTheme }) {
                   key={live.config ? 'published' : 'defaults'}
                   station={withLiveConfig(station, live.config)}
                   notify={notify}
+                  access={
+                    !accountsOn ? 'local' : canPublish(account.profile?.role) ? 'allowed' : 'denied'
+                  }
                 />
               )}
               {tab === 'Configuration' && !station.live && (
@@ -1561,7 +1591,79 @@ function EmbedPanel({ notify, streamUrl }) {
     </section>
   );
 }
-function LiveStationForm({ station, notify }) {
+function StaffGate({ account, onExit, onSignOut, toast }) {
+  const signedIn = account.phase === 'signed-in';
+  const checking =
+    account.phase === 'idle' ||
+    account.phase === 'loading' ||
+    (signedIn && !account.profile && !account.profileError);
+  return (
+    <main className="admin-gate">
+      <section className="admin-gate-panel" aria-live="polite">
+        <Brand />
+        <span className="eyebrow">SOUTHCITY OPERATIONS</span>
+        {checking ? (
+          <>
+            <h1>Checking your access…</h1>
+            <p className="admin-gate-status">
+              <LoaderCircle size={16} className="spin" /> Connecting to SouthCity accounts
+            </p>
+          </>
+        ) : !signedIn ? (
+          <>
+            <h1>Staff sign in</h1>
+            <p>
+              The broadcast workspace is for SouthCity DJs, station managers, and administrators.
+              We’ll email you a one-time sign-in link.
+            </p>
+            {account.linkError && (
+              <p className="sign-in-error" role="alert">
+                <AlertTriangle size={16} /> {account.linkError}
+              </p>
+            )}
+            <SignInForm workspace="admin" />
+          </>
+        ) : account.profileError ? (
+          <>
+            <h1>We couldn’t confirm your access</h1>
+            <p>{account.profileError}</p>
+            <div className="admin-gate-actions">
+              <Button onClick={retryProfile}>
+                <RefreshCw size={15} /> Try again
+              </Button>
+              <Button variant="secondary" onClick={onSignOut}>
+                <LogOut size={15} /> Sign out
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h1>This account isn’t on the staff list</h1>
+            <p>
+              You’re signed in as <b>{account.user.email}</b>. Ask a SouthCity administrator to give
+              your account a DJ, station manager, or administrator role, then sign in again.
+            </p>
+            <div className="admin-gate-actions">
+              <Button variant="secondary" onClick={onSignOut}>
+                <LogOut size={15} /> Sign out
+              </Button>
+            </div>
+          </>
+        )}
+        <button className="admin-gate-exit" onClick={onExit}>
+          <ArrowLeft size={15} /> Back to listening
+        </button>
+      </section>
+      {toast && (
+        <div role="status" className="toast admin-toast">
+          <CheckCircle2 size={18} />
+          {toast}
+        </div>
+      )}
+    </main>
+  );
+}
+function LiveStationForm({ station, notify, access }) {
   const [state, setState] = useState({ phase: 'idle' }),
     [streamUrl, setStreamUrl] = useState(station.stream);
   const publish = async (input, force = false) => {
@@ -1586,9 +1688,20 @@ function LiveStationForm({ station, notify }) {
     >
       <h2>Station configuration</h2>
       <p>
-        Publishing updates the SouthCity app for everyone using this local server. Listeners get a
-        new stream address the next time they press play.
+        {access === 'local'
+          ? 'Publishing updates the SouthCity app for everyone using this local server.'
+          : 'Publishing updates the SouthCity app for every listener on this server.'}{' '}
+        Listeners get a new stream address the next time they press play.
       </p>
+      {access === 'denied' && (
+        <div className="admin-alert form-alert" role="note">
+          <ShieldCheck size={18} />
+          <div>
+            <strong>View only</strong>
+            <p>Only station managers and administrators can publish station changes.</p>
+          </div>
+        </div>
+      )}
       <label className="form-label">
         Station name
         <input name="name" defaultValue={station.name} required maxLength={80} />
@@ -1655,7 +1768,7 @@ function LiveStationForm({ station, notify }) {
           <CheckCircle2 size={15} /> Published. The SouthCity app picks this up within 15 seconds.
         </p>
       )}
-      <Button type="submit" disabled={state.phase === 'publishing'}>
+      <Button type="submit" disabled={state.phase === 'publishing' || access === 'denied'}>
         {state.phase === 'publishing' ? (
           <>
             <RefreshCw size={16} className="spin" /> Checking stream & publishing…

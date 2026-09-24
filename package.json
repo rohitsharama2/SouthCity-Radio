@@ -7,7 +7,7 @@
     "dev": "node scripts/dev.js",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/data/*.test.js",
+    "test": "node --test src/data/*.test.js server/*.test.js",
     "test:e2e": "playwright test",
     "format": "prettier --write src server scripts tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
     "format:check": "prettier --check src server scripts tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
@@ -15,6 +15,7 @@
     "dev:admin": "vite --mode admin"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.1",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

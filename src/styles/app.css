@@ -3590,3 +3590,104 @@ select {
     font-size: 13px;
   }
 }
+/* Accounts: profile card and the sign-in form shared by the app and admin gate. */
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 20px 25px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.account-card > div {
+  flex: 1;
+  min-width: 0;
+}
+.account-card strong {
+  display: block;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.account-card p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.account-card p .text-button {
+  display: inline-flex;
+  margin-left: 8px;
+}
+.account-card > .collection-icon {
+  flex-shrink: 0;
+}
+.sign-in-form {
+  display: flex;
+  flex-direction: column;
+}
+.sign-in-form .button {
+  width: 100%;
+}
+.sign-in-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -6px 0 16px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--danger);
+}
+.sign-in-error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.sign-in-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  font-size: 10px;
+  color: var(--muted);
+}
+.sign-in-divider::before,
+.sign-in-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--line);
+}
+.sign-in-sent {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background: var(--surface-alt);
+}
+.sign-in-sent > svg {
+  flex-shrink: 0;
+  color: var(--brand);
+}
+.sign-in-sent strong {
+  font-size: 13px;
+}
+.sign-in-sent p {
+  margin: 6px 0 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.sign-in-sent b {
+  color: var(--ink);
+  font-weight: 600;
+}
+@media (max-width: 760px) {
+  .account-card {
+    flex-wrap: wrap;
+    padding: 18px;
+  }
+  .account-card > .button {
+    width: 100%;
+  }
+}

@@ -43,6 +43,7 @@ npm run preview
 | Player            | Real external preview audio, play/pause, persistent mini-player, full player, volume/mute, station switching, share, sleep timer, Media Session handlers                                  |
 | Library           | Persistent favorite stations, followed shows, actual local station history; honest empty states for episodes and downloads                                                                |
 | Profile           | Editable local name, notification preference, appearance, listening counts, privacy reset, help                                                                                           |
+| Accounts          | Optional Supabase sign-in by one-time email link (Google if enabled); favorites and followed shows sync to the account; staff roles gate the admin and publishing                         |
 | Welcome           | Two-step onboarding available from Profile; splash specimen in the component gallery                                                                                                      |
 | Admin             | Dashboard, station configuration drafts, monitoring, AutoDJ preference, playlist create/delete, local media selection, schedule drafts, DJs/users drafts, sample analytics and CSV export |
 | Design system     | Live palette previews, typography, shared cards and controls, audio states, skeletons, loading/error/empty states, dialog and splash specimens                                            |
@@ -52,6 +53,34 @@ npm run preview
 **Open the design system:** Profile → Design system & component gallery.
 
 **Try onboarding:** Profile → Welcome to SouthCity. It does not interrupt returning listeners.
+
+## Accounts (Supabase)
+
+Accounts are optional. Without them the app works exactly as a local preview: the library stays in the browser, the admin opens without sign-in, and publishing is accepted only from this computer. With them:
+
+- **Listeners** sign in from Profile with a one-time email link (no password). Favorite stations and followed shows are saved to their account and merged with anything already saved in the browser. Recent stations, theme, and notification preference stay on each device. Signing out removes the account's copy from that browser.
+- **The admin workspace** requires a staff role. DJs can view it; only **station managers** and **administrators** can publish SouthCity Live changes. The SouthCity server checks the caller's session and role on every publish, so hiding a button is never the only protection.
+
+### Set it up (free plan)
+
+1. Create a project at [supabase.com](https://supabase.com) (the free plan is enough).
+2. In **SQL Editor**, run [`supabase/migrations/20260924000000_accounts.sql`](supabase/migrations/20260924000000_accounts.sql). It creates `profiles` (name and role) and `follows`, with row-level security so each person reads and changes only their own rows and nobody can change their own role.
+3. In **Authentication → URL Configuration**, set the Site URL to `http://localhost:5180` and add these Redirect URLs: `http://localhost:5180/**`, `http://localhost:5181/**`, `http://localhost:4180/**`, and the same with `127.0.0.1`. Add your LAN address or production domain when you use one.
+4. Copy `.env.example` to `.env` and fill in the **Project URL** and the **publishable key** (or the legacy `anon` key) from **Project Settings → API Keys**. Restart `npm run dev`.
+5. Sign in once from the admin (http://localhost:5181). You'll see "This account isn't on the staff list". Then grant yourself a role in the SQL Editor and reload:
+
+   ```sql
+   update public.profiles set role = 'admin'
+   where id = (select id from auth.users where email = 'you@example.com');
+   ```
+
+   Roles are `listener` (default), `dj`, `station_manager`, and `admin`. Roles can only be changed here, not from the app.
+
+**Keys:** the project URL and publishable key are public by design. The app reads them at runtime from `/api/auth-config` and they are not built into the bundle. **Never** put the `service_role`/secret key in `.env`. The server refuses to start accounts with one, because that key would be sent to browsers.
+
+**Free plan limits:** Supabase pauses a free project after about a week without activity (restore it from the dashboard). Its built-in email sender allows only a few emails per hour and is meant for testing. Before real listeners sign up, connect your own SMTP provider under **Authentication → Emails → SMTP**. To offer **Continue with Google**, enable the Google provider in **Authentication → Sign In / Providers**. The button appears automatically once it's enabled.
+
+**Sign-in links** open in the browser that requested them (the PKCE flow). Each origin has its own session, so in development you sign in to the app (5180) and the admin (5181) separately.
 
 ## Change the look centrally
 
@@ -72,18 +101,25 @@ src/
   components/
     ui.jsx                    Shared visual components and dialog behavior
     AudioProvider.jsx         Persistent HTMLAudioElement + Media Session
+    useAccount.js             Supabase session, profile, and follows (optional accounts)
+    SignIn.jsx                One-time email link sign-in shared by app and admin
     Admin.jsx                 Separate operations workspace
     DesignSystem.jsx          Interactive component and state gallery
   data/
     stations.js               Illustrative catalog, schedule, search filtering
     stations.test.js          Search/filter behavior tests
+    accounts.js               Roles, config checks, library merge (shared with server)
   styles/
     tokens.css                Central brand and semantic tokens
     app.css                   Consumer and shared component styling
     admin.css                 Operations-specific layout and styling
+server/
+  liveStation.js              Live station publishing and metadata proxy
+  accounts.js                 Account config endpoint and staff checks for publishing
+supabase/migrations/          Database tables and row-level security for accounts
 ```
 
-The audio provider wraps both workspaces. Navigation does not recreate the audio element. Local preferences and drafts use namespaced `localStorage` keys; selected media files are kept only as metadata in memory. There is no login server or authorization layer in this prototype.
+The audio provider wraps both workspaces. Navigation does not recreate the audio element. Local preferences and drafts use namespaced `localStorage` keys; selected media files are kept only as metadata in memory. Accounts are optional and use Supabase ([`src/components/useAccount.js`](src/components/useAccount.js), [`server/accounts.js`](server/accounts.js), rules in [`src/data/accounts.js`](src/data/accounts.js)). Supabase keeps the session in `localStorage` under `sc-auth`.
 
 ## Audio and data honesty
 
@@ -92,7 +128,7 @@ The audio provider wraps both workspaces. Navigation does not recreate the audio
 - Playing, paused, connecting, buffering, network error, offline, and unavailable states are represented. Network and playback events drive the player; every state can also be inspected in the design gallery.
 - Listen history records selected stations, not verified completed listening sessions.
 - Browser playback can continue while navigating and supports compatible system media controls. **Reliable native background playback, interruptions, lock-screen artwork, Bluetooth routing, and Android foreground services require native integration and device testing.**
-- Favorites, profile, shows, and theme survive browser refresh. Accounts, push notifications, downloads, recorded episodes, entitlement enforcement, and cross-device sync are not implemented.
+- Favorites, profile, shows, and theme survive browser refresh. With accounts configured, favorites, followed shows, and display name sync across browsers when the listener signs in or reloads (there is no live push between open tabs). Account deletion from the app, push notifications, downloads, recorded episodes, and entitlement enforcement are not implemented.
 - Photos load from Unsplash, avatars from Pravatar, and fonts from Google Fonts. Replace remote samples with owned/approved, self-hosted assets before release.
 
 ## Live station
@@ -102,7 +138,7 @@ The audio provider wraps both workspaces. Navigation does not recreate the audio
 - Publishing goes through the local SouthCity server built into `npm run dev:app`, `npm run dev:admin`, and `npm run preview` ([`server/liveStation.js`](server/liveStation.js)). It saves to `.local/live-station.json` (not committed). Delete that file to return to the defaults in [`src/data/liveStream.js`](src/data/liveStream.js).
 - Before saving, the server test-connects to the stream. If it can't connect, the admin says why and offers **Publish anyway** (for example, to save an HTTPS address before SSL is switched on).
 - Stream URLs must be public listener addresses. URLs containing a username or password are rejected.
-- Writes are accepted only from the same computer. This is not account security: a deployed admin needs the authenticated SouthCity API described in [docs/INTEGRATION.md](docs/INTEGRATION.md). A static host without the SouthCity server keeps the defaults and the admin reports that publishing is unavailable.
+- With [accounts](#accounts-supabase) configured, publishing requires a signed-in station manager or administrator; the server verifies the session with Supabase and reads the role from the database. Without accounts, writes are accepted only from the same computer. A static host without the SouthCity server has neither accounts nor publishing: it keeps the defaults and the admin reports that publishing is unavailable.
 - **Audio** plays directly from the stream URL. **Metadata** (`/stats`, `/played`) has no CORS headers, so the SouthCity server proxies it at `/live-metadata`, following whichever stream is published.
 - **HTTPS:** the current server (`85.25.185.202:8665`) answers plain HTTP only; its HTTPS connection is refused. Browsers block HTTP audio on HTTPS pages, so a deployed HTTPS app needs SSL enabled for the stream in Centova Cast or a TLS reverse proxy with a domain. Until then, listen via `http://localhost:5180` or `http://<your-computer's-LAN-IP>:5180` on a phone.
 - **Embed:** Stations → SouthCity Live → **Embed** lists the stream URL, a copyable website player snippet, and the now-playing JSON address.

@@ -13,4 +13,6 @@ Schedule time is IST in the prototype. Connected schedules need UTC timestamps, 
 
 Charts, summary metrics, rows, exports, and date ranges should derive from a coherent data source when connected. Label sample data. Wide tables scroll within their container; mobile pages must not acquire document-level overflow.
 
+With accounts configured the workspace is gated by `isStaff`, and publishing by `canPublish` (`src/data/accounts.js`); the server re-checks the role on every write (`server/accounts.js`). New privileged endpoints must call the server check too, never rely on the hidden button. Without accounts, keep the local same-machine behavior.
+
 Validate config draft persistence, playlist lifecycle, schedule creation, monitor state, relevant directory changes, and both themes. Use actual authorization context for live operations; do not introduce approval gates for harmless local drafts.

@@ -75,6 +75,17 @@ import Admin from './components/Admin.jsx';
 import { workspacePorts } from './data/workspaces.js';
 import { readLocal as readSaved, writeLocal, removeLocal } from './data/storage.js';
 import DesignSystem from './components/DesignSystem.jsx';
+import {
+  useAccount,
+  signOut,
+  loadLibrary,
+  addFollows,
+  setFollow,
+  clearFollows,
+  updateDisplayName,
+} from './components/useAccount.js';
+import { SignInForm } from './components/SignIn.jsx';
+import { mergeLibrary, roleLabels, validateDisplayName, isStaff } from './data/accounts.js';
 const navigation = [
   { name: 'Home', icon: Home },
   { name: 'Discover', icon: Compass },
@@ -92,6 +103,9 @@ export default function App() {
 function RadioApp() {
   const audio = useAudio();
   const live = useLiveStream();
+  const account = useAccount();
+  const signedIn = account.phase === 'signed-in';
+  const userId = account.user?.id ?? null;
   const withLive = (s) => withLiveMetadata(s, live.data, live.config);
   // Playback and selection use the catalog entry plus any published live settings.
   const baseStation = (s) => withLiveConfig(stations.find((x) => x.id === s.id) || s, live.config);
@@ -111,7 +125,57 @@ function RadioApp() {
     [onboardStep, setOnboardStep] = useState(0),
     [displayName, setDisplayName] = useState(() => readSaved('sc-name', 'Alex')),
     [notifications, setNotifications] = useState(() => readSaved('sc-notifications', true)),
-    [quality, setQuality] = useState('Standard · 128 kbps');
+    [quality, setQuality] = useState('Standard · 128 kbps'),
+    [librarySync, setLibrarySync] = useState('idle'),
+    [syncAttempt, setSyncAttempt] = useState(0),
+    [previousUser, setPreviousUser] = useState(null);
+  // Signed in, favorites and followed shows live in the account; this browser keeps a copy.
+  // Signing in adds this device's collection to the account without removing anything.
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    setLibrarySync('syncing');
+    (async () => {
+      try {
+        const { library, missing } = mergeLibrary(
+          { stations: favorites, shows: followedShows },
+          await loadLibrary(),
+        );
+        await addFollows(missing);
+        if (cancelled) return;
+        setFavorites(library.stations);
+        setFollowedShows(library.shows);
+        setLibrarySync('synced');
+        if (missing.length) setToast('Your saved stations and shows are now in your account');
+      } catch (error) {
+        if (cancelled) return;
+        setLibrarySync('failed');
+        setToast(error.message);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, syncAttempt]);
+  // Leaving an account (sign-out here, elsewhere, or an expired session) removes its copy
+  // from this browser; the account keeps it.
+  if (previousUser !== userId) {
+    setPreviousUser(userId);
+    if (previousUser && !userId) {
+      setFavorites([]);
+      setFollowedShows([]);
+      setLibrarySync('idle');
+    }
+  }
+  const firstName =
+    signedIn && account.profile ? account.profile.displayName.split(/\s+/)[0] : displayName;
+  const fullName =
+    signedIn && account.profile ? account.profile.displayName : `${displayName} Morgan`;
+  const memberLabel = signedIn
+    ? account.profile && isStaff(account.profile.role)
+      ? roleLabels[account.profile.role]
+      : 'SouthCity member'
+    : 'Curious listener';
   useEffect(() => {
     const warn = () =>
       setToast('Browser storage is unavailable. Changes last for this session only.');
@@ -132,6 +196,9 @@ function RadioApp() {
     writeLocal('sc-shows', followedShows);
   }, [followedShows]);
   useEffect(() => {
+    if (account.linkError) setToast(account.linkError);
+  }, [account.linkError]);
+  useEffect(() => {
     if (toast) {
       const id = setTimeout(() => setToast(''), 3500);
       return () => clearTimeout(id);
@@ -140,7 +207,14 @@ function RadioApp() {
   useEffect(() => {
     if (import.meta.env.MODE === 'admin') return;
     const hash = window.location.hash.slice(1);
-    if (hash.startsWith('station/')) {
+    // Admin sign-in links return with ?workspace=admin (see authRedirectUrl).
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('workspace') === 'admin') {
+      url.searchParams.delete('workspace');
+      url.hash = 'admin';
+      history.replaceState(history.state, '', url.href);
+      setPage('Admin');
+    } else if (hash.startsWith('station/')) {
       const s = stations.find((s) => s.id === hash.split('/')[1]);
       if (s) {
         setSelected(s);
@@ -187,10 +261,61 @@ function RadioApp() {
     audio.play(s);
     setHistory((h) => [s.id, ...h.filter((id) => id !== s.id)].slice(0, 12));
   };
+  // Signed in, a change shows at once and is undone if the account doesn't save it.
+  const followChange = (kind, id, following, apply, message) => {
+    apply(following);
+    if (!signedIn) return message && setToast(message);
+    setFollow(kind, id, following)
+      .then(() => message && setToast(message))
+      .catch((error) => {
+        apply(!following);
+        setToast(error.message);
+      });
+  };
   const toggleFavorite = (id) => {
     const exists = favorites.includes(id);
-    setFavorites((f) => (exists ? f.filter((x) => x !== id) : [...f, id]));
-    setToast(exists ? 'Station removed from your library' : 'Station added to your library');
+    followChange(
+      'station',
+      id,
+      !exists,
+      (on) =>
+        setFavorites((f) => (on ? [...f.filter((x) => x !== id), id] : f.filter((x) => x !== id))),
+      exists ? 'Station removed from your library' : 'Station added to your library',
+    );
+  };
+  const toggleShow = (id) =>
+    followChange('show', id, !followedShows.includes(id), (on) =>
+      setFollowedShows((f) =>
+        on ? [...f.filter((x) => x !== id), id] : f.filter((x) => x !== id),
+      ),
+    );
+  const leaveAccount = () =>
+    signOut()
+      .then(() => setToast('Signed out. Your library is saved in your account.'))
+      .catch((error) => setToast(error.message));
+  const clearListeningData = async () => {
+    if (signedIn) {
+      try {
+        await clearFollows();
+      } catch (error) {
+        return setToast(error.message);
+      }
+    }
+    ['sc-favorites', 'sc-history', 'sc-shows', 'sc-name', 'sc-theme', 'sc-notifications'].forEach(
+      (k) => removeLocal(k),
+    );
+    setFavorites([]);
+    setHistory([]);
+    setFollowedShows([]);
+    setDisplayName('Alex');
+    setNotifications(true);
+    setTheme('light');
+    setToast(
+      signedIn
+        ? 'Listening data cleared from your account and this browser'
+        : 'Local profile and listening data cleared',
+    );
+    setModal(null);
   };
   const card = (s) => (
     <StationCard
@@ -322,10 +447,10 @@ function RadioApp() {
             <Settings size={15} /> Creator & admin portal <ArrowUpRight size={13} />
           </button>
           <button className="sidebar-user" onClick={() => go('Profile')}>
-            <span className="avatar">{displayName.slice(0, 1)}</span>
+            <span className="avatar">{firstName.slice(0, 1)}</span>
             <span>
-              <strong>{displayName} Morgan</strong>
-              <small>Curious listener</small>
+              <strong>{fullName}</strong>
+              <small>{memberLabel}</small>
             </span>
             <ChevronRight size={15} />
           </button>
@@ -372,7 +497,7 @@ function RadioApp() {
               aria-label="Your profile"
               onClick={() => go('Profile')}
             >
-              {displayName.slice(0, 1)}
+              {firstName.slice(0, 1)}
             </button>
           </div>
         </header>
@@ -385,7 +510,7 @@ function RadioApp() {
                     <Sun size={14} /> A LITTLE SOUND FOR YOUR DAY
                   </div>
                   <h1>
-                    Good afternoon, {displayName}
+                    Good afternoon, {firstName}
                     <span className="heading-dot">.</span>
                   </h1>
                   <p>Old favorites. New frequencies. Something that feels like you.</p>
@@ -908,16 +1033,7 @@ function RadioApp() {
                     <Button onClick={() => play(selected)}>
                       <Play size={16} /> Listen to the station
                     </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        setFollowedShows((f) =>
-                          f.includes(selected.id)
-                            ? f.filter((id) => id !== selected.id)
-                            : [...f, selected.id],
-                        )
-                      }
-                    >
+                    <Button variant="secondary" onClick={() => toggleShow(selected.id)}>
                       {followedShows.includes(selected.id) ? (
                         <Check size={16} />
                       ) : (
@@ -1066,15 +1182,22 @@ function RadioApp() {
                 <h1>Your profile.</h1>
               </div>
               <div className="profile-hero">
-                <div className="avatar large">{displayName.slice(0, 1)}</div>
+                <div className="avatar large">{firstName.slice(0, 1)}</div>
                 <div>
-                  <h2>{displayName} Morgan</h2>
-                  <p>Curious listener · SouthCity community</p>
+                  <h2>{fullName}</h2>
+                  <p>{memberLabel} · SouthCity community</p>
                 </div>
                 <Button variant="secondary" onClick={() => setModal('edit-profile')}>
                   Edit profile
                 </Button>
               </div>
+              <AccountCard
+                account={account}
+                librarySync={librarySync}
+                onSignIn={() => setModal('sign-in')}
+                onSignOut={leaveAccount}
+                onRetry={() => setSyncAttempt((n) => n + 1)}
+              />
               <div className="profile-stats">
                 <div>
                   <strong>{favorites.length}</strong>
@@ -1465,23 +1588,55 @@ function RadioApp() {
       {modal === 'edit-profile' && (
         <Modal title="Make it yours" onClose={() => setModal(null)}>
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              const name = new FormData(e.currentTarget).get('name').trim();
-              if (name) {
+              const { value: name } = validateDisplayName(
+                new FormData(e.currentTarget).get('name'),
+              );
+              if (!name) return;
+              if (signedIn) {
+                try {
+                  await updateDisplayName(name);
+                } catch (error) {
+                  return setToast(error.message);
+                }
+              } else {
                 setDisplayName(name);
                 writeLocal('sc-name', name);
-                setModal(null);
-                setToast('Profile updated on this device');
               }
+              setModal(null);
+              setToast(
+                signedIn ? 'Profile updated in your account' : 'Profile updated on this device',
+              );
             }}
           >
             <label className="form-label">
-              First name
-              <input name="name" defaultValue={displayName} maxLength={30} required autoFocus />
+              {signedIn ? 'Display name' : 'First name'}
+              <input
+                name="name"
+                defaultValue={signedIn ? fullName : displayName}
+                maxLength={30}
+                required
+                autoFocus
+              />
             </label>
             <Button type="submit">Save profile</Button>
           </form>
+        </Modal>
+      )}
+      {modal === 'sign-in' && (
+        <Modal title="Sign in to SouthCity" onClose={() => setModal(null)}>
+          {signedIn ? (
+            <p className="modal-description">You’re signed in as {account.user.email}.</p>
+          ) : (
+            <>
+              <p className="modal-description">
+                We’ll email you a one-time link, so there’s no password to remember. New here? The
+                same link creates your account.
+              </p>
+              <SignInForm workspace="app" />
+            </>
+          )}
         </Modal>
       )}
       {modal === 'onboarding' && (
@@ -1557,37 +1712,35 @@ function RadioApp() {
               </>
             ) : modal === 'privacy' ? (
               <>
-                <p>
-                  Your favorites, followed shows, recent stations, name, notification preference,
-                  and theme are stored only in this browser. There is no account server or tracking
-                  analytics in this prototype.
-                </p>
+                {signedIn ? (
+                  <>
+                    <p>
+                      Your email, display name, favorite stations, and followed shows are saved to
+                      your SouthCity account, hosted by Supabase. Recent stations, notification
+                      preference, and theme stay in this browser.
+                    </p>
+                    <p>
+                      Clearing removes your favorites and followed shows from your account and
+                      clears this browser’s listening data. Your sign-in and name remain; deleting
+                      an account isn’t available in the app yet.
+                    </p>
+                  </>
+                ) : (
+                  <p>
+                    Your favorites, followed shows, recent stations, name, notification preference,
+                    and theme are stored only in this browser.{' '}
+                    {account.phase === 'signed-out'
+                      ? 'If you sign in, your email, favorites, and followed shows are saved to a SouthCity account hosted by Supabase.'
+                      : 'There is no account server for this preview.'}{' '}
+                    There is no tracking analytics in this prototype.
+                  </p>
+                )}
                 <p>
                   Preview audio and images load from external providers, who receive normal network
                   requests.
                 </p>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    [
-                      'sc-favorites',
-                      'sc-history',
-                      'sc-shows',
-                      'sc-name',
-                      'sc-theme',
-                      'sc-notifications',
-                    ].forEach((k) => removeLocal(k));
-                    setFavorites([]);
-                    setHistory([]);
-                    setFollowedShows([]);
-                    setDisplayName('Alex');
-                    setNotifications(true);
-                    setTheme('light');
-                    setToast('Local profile and listening data cleared');
-                    setModal(null);
-                  }}
-                >
-                  Clear local listening data
+                <Button variant="secondary" onClick={clearListeningData}>
+                  {signedIn ? 'Clear my listening data' : 'Clear local listening data'}
                 </Button>
               </>
             ) : (
@@ -1602,10 +1755,16 @@ function RadioApp() {
                   Check the volume and your connection, then retry from the full player. Some
                   networks may block external preview streams.
                 </p>
-                <h3>Native apps & accounts</h3>
+                <h3>Accounts</h3>
                 <p>
-                  This is a web prototype. Native background playback, account sync, and Centova
-                  Cast administration require the integrations described in the README.
+                  Sign in from your profile with a one-time email link. Your favorites and followed
+                  shows then follow you to any browser where you sign in. Recent stations stay on
+                  each device.
+                </p>
+                <h3>Native apps</h3>
+                <p>
+                  This is a web prototype. Native background playback and Centova Cast
+                  administration require the integrations described in the README.
                 </p>
               </>
             )}
@@ -1613,6 +1772,66 @@ function RadioApp() {
         </Modal>
       )}
     </div>
+  );
+}
+function AccountCard({ account, librarySync, onSignIn, onSignOut, onRetry }) {
+  if (account.phase === 'idle' || account.phase === 'loading') return null;
+  if (account.phase === 'unavailable')
+    return (
+      <section className="account-card">
+        <span className="collection-icon">
+          <Shield size={18} />
+        </span>
+        <div>
+          <strong>Your library lives in this browser</strong>
+          <p>
+            Accounts aren’t set up for this preview, so favorites and follows stay on this device.
+          </p>
+        </div>
+      </section>
+    );
+  if (account.phase === 'signed-out')
+    return (
+      <section className="account-card">
+        <span className="collection-icon">
+          <Mail size={18} />
+        </span>
+        <div>
+          <strong>Keep your library everywhere</strong>
+          <p>
+            Sign in to save favorites and followed shows to your account. Anything you’ve saved in
+            this browser comes with you.
+          </p>
+        </div>
+        <Button onClick={onSignIn}>Sign in</Button>
+      </section>
+    );
+  return (
+    <section className="account-card">
+      <span className="collection-icon">
+        <CheckCircle2 size={18} />
+      </span>
+      <div>
+        <strong>Signed in as {account.user.email}</strong>
+        <p role="status">
+          {account.profileError ??
+            {
+              syncing: 'Syncing your library…',
+              synced: 'Favorites and followed shows are saved to your account.',
+              failed: 'Your account couldn’t be reached. Changes may not be saved.',
+            }[librarySync] ??
+            'Connecting to your account…'}
+          {librarySync === 'failed' && (
+            <button className="text-button" onClick={onRetry}>
+              Try again
+            </button>
+          )}
+        </p>
+      </div>
+      <Button variant="secondary" onClick={onSignOut}>
+        <LogOut size={15} /> Sign out
+      </Button>
+    </section>
   );
 }
 function Schedule({ onShow }) {
