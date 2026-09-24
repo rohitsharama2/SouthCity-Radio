@@ -36,11 +36,26 @@ import {
   RefreshCw,
   Menu,
   Trash2,
+  Copy,
+  Code2,
 } from 'lucide-react';
 import { Brand, Button, IconButton, Modal, Artwork, LiveBadge, EmptyState } from './ui.jsx';
 import { stations, schedule } from '../data/stations.js';
 import '../styles/admin.css';
 import { readLocal as saved, writeLocal } from '../data/storage.js';
+import { useLiveStream, refreshLiveStream, publishLiveStation } from './useLiveStream.js';
+import {
+  publicStatsUrl,
+  stationGenres,
+  stationLanguages,
+  validateLiveStation,
+  withLiveConfig,
+  formatListeners,
+  formatUptime,
+  nowPlayingText,
+  streamDescription,
+  withLiveMetadata,
+} from '../data/liveStream.js';
 const nav = [
   ['Dashboard', LayoutDashboard],
   ['Stations', Radio],
@@ -111,6 +126,39 @@ export default function Admin({ onExit, theme, setTheme }) {
         },
       ]),
     );
+  const live = useLiveStream();
+  const liveState =
+    live.phase === 'ready'
+      ? live.data.onAir
+        ? 'On air'
+        : 'Off air'
+      : live.phase === 'error'
+        ? 'Unreachable'
+        : 'Checking';
+  // One status model for the table, monitor, and station header: real for the live station,
+  // local drafts for sample stations.
+  const streamRow = (s) => {
+    if (s.live)
+      return {
+        status: liveState,
+        active: liveState === 'On air',
+        listeners: formatListeners(live.data?.listeners),
+        format: streamDescription(live.data) || 'Live stream',
+        nowPlaying: nowPlayingText(withLiveMetadata(s, live.data, live.config)),
+        source: 'From the station server',
+        health: liveState === 'On air' ? 'Connected' : liveState,
+      };
+    const paused = drafts[s.id]?.paused;
+    return {
+      status: paused ? 'Paused' : 'Live',
+      active: !paused,
+      listeners: paused ? '—' : s.listeners.toLocaleString(),
+      format: '128 kbps',
+      nowPlaying: s.show,
+      source: s.host,
+      health: paused ? 'Standby' : 'Excellent',
+    };
+  };
   React.useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(''), 3500);
@@ -144,7 +192,8 @@ export default function Admin({ onExit, theme, setTheme }) {
     setter(value);
     writeLocal(key, value);
   };
-  const stationName = (s) => drafts[s.id]?.name || s.name;
+  const stationName = (s) =>
+    s.live ? withLiveConfig(s, live.config).name : drafts[s.id]?.name || s.name;
   const filtered = stations.filter((s) =>
     [stationName(s), s.genre, s.host].join(' ').toLowerCase().includes(query.toLowerCase()),
   );
@@ -154,7 +203,7 @@ export default function Admin({ onExit, theme, setTheme }) {
       stations
         .map(
           (s) =>
-            `"${stationName(s).replaceAll('"', '""')}",${s.genre},${s.listeners},${drafts[s.id]?.paused ? 'paused' : 'healthy'}`,
+            `"${stationName(s).replaceAll('"', '""')}",${s.genre},${s.live ? (live.data?.listeners ?? '') : s.listeners},${s.live ? liveState.toLowerCase() : drafts[s.id]?.paused ? 'paused' : 'healthy'}`,
         )
         .join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
@@ -184,54 +233,57 @@ export default function Admin({ onExit, theme, setTheme }) {
           </tr>
         </thead>
         <tbody>
-          {filtered.map((s) => (
-            <tr key={s.id}>
-              <td>
-                <button className="table-station" onClick={() => openStation(s)}>
-                  <Artwork station={s} />
-                  <span>
-                    <strong>{stationName(s)}</strong>
-                    <small>{s.genre} · 128 kbps</small>
+          {filtered.map((s) => {
+            const row = streamRow(s);
+            return (
+              <tr key={s.id}>
+                <td>
+                  <button className="table-station" onClick={() => openStation(s)}>
+                    <Artwork station={s} />
+                    <span>
+                      <strong>{stationName(s)}</strong>
+                      <small>
+                        {s.genre} · {row.format}
+                      </small>
+                    </span>
+                  </button>
+                </td>
+                <td>
+                  <span className={`status-label ${row.active ? '' : 'muted'}`}>
+                    <i />
+                    {row.status}
                   </span>
-                </button>
-              </td>
-              <td>
-                <span className={`status-label ${drafts[s.id]?.paused ? 'muted' : ''}`}>
-                  <i />
-                  {drafts[s.id]?.paused ? 'Paused' : 'Live'}
-                </span>
-              </td>
-              <td>
-                <span className="table-listeners">
-                  <Headphones size={13} />
-                  {drafts[s.id]?.paused ? '—' : s.listeners.toLocaleString()}
-                </span>
-              </td>
-              <td>
-                <span className="table-show">
-                  {s.show}
-                  <small>{s.host}</small>
-                </span>
-              </td>
-              <td>
-                <span className="health-bars">
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <span className="health-label">
-                  {drafts[s.id]?.paused ? 'Standby' : 'Excellent'}
-                </span>
-              </td>
-              <td>
-                <IconButton label={`Manage ${s.name}`} onClick={() => openStation(s)}>
-                  <ChevronRight size={17} />
-                </IconButton>
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td>
+                  <span className="table-listeners">
+                    <Headphones size={13} />
+                    {row.listeners}
+                  </span>
+                </td>
+                <td>
+                  <span className="table-show">
+                    {row.nowPlaying}
+                    <small>{row.source}</small>
+                  </span>
+                </td>
+                <td>
+                  <span className="health-bars">
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <span className="health-label">{row.health}</span>
+                </td>
+                <td>
+                  <IconButton label={`Manage ${s.name}`} onClick={() => openStation(s)}>
+                    <ChevronRight size={17} />
+                  </IconButton>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {!filtered.length && (
@@ -378,21 +430,23 @@ export default function Admin({ onExit, theme, setTheme }) {
                 </td>
               </tr>
             ))}
-            {stations.map((s) => (
-              <tr key={s.id}>
-                <td>
-                  <span className="media-title">
-                    <Disc3 size={19} />
-                    {s.track}
-                  </span>
-                </td>
-                <td>{s.artist}</td>
-                <td>Catalog sample</td>
-                <td>
-                  <span className="admin-tag">Metadata only</span>
-                </td>
-              </tr>
-            ))}
+            {stations
+              .filter((s) => !s.live)
+              .map((s) => (
+                <tr key={s.id}>
+                  <td>
+                    <span className="media-title">
+                      <Disc3 size={19} />
+                      {s.track}
+                    </span>
+                  </td>
+                  <td>{s.artist}</td>
+                  <td>Catalog sample</td>
+                  <td>
+                    <span className="admin-tag">Metadata only</span>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
@@ -499,7 +553,7 @@ export default function Admin({ onExit, theme, setTheme }) {
               {name}
               {name === 'Live Streams' && (
                 <span className="nav-count">
-                  {stations.filter((s) => !drafts[s.id]?.paused).length}
+                  {stations.filter((s) => streamRow(s).active).length}
                 </span>
               )}
             </button>
@@ -605,11 +659,10 @@ export default function Admin({ onExit, theme, setTheme }) {
               ) : view === 'Live Streams' ? (
                 <Button
                   variant="secondary"
-                  onClick={() =>
-                    notify(
-                      'Sample stream health refreshed. Connect the backend for live telemetry.',
-                    )
-                  }
+                  onClick={() => {
+                    refreshLiveStream();
+                    notify('SouthCity Live status refreshed. Sample streams remain illustrative.');
+                  }}
                 >
                   <RefreshCw size={15} /> Refresh status
                 </Button>
@@ -656,7 +709,8 @@ export default function Admin({ onExit, theme, setTheme }) {
                 <div className="panel-heading">
                   <div>
                     <h2>
-                      On air across your network <span className="count-badge">6</span>
+                      On air across your network{' '}
+                      <span className="count-badge">{stations.length}</span>
                     </h2>
                     <p>The people and sounds keeping your city company.</p>
                   </div>
@@ -703,7 +757,7 @@ export default function Admin({ onExit, theme, setTheme }) {
                     <CheckCircle2 size={31} />
                     <div>
                       <h3>Good sounds. Healthy streams.</h3>
-                      <p>All six demo streams are operating normally.</p>
+                      <p>The sample streams are operating normally in this preview.</p>
                     </div>
                   </div>
                   {!dismissed ? (
@@ -728,7 +782,7 @@ export default function Admin({ onExit, theme, setTheme }) {
             <section className="admin-panel">
               <div className="panel-heading">
                 <h2>
-                  Your stations <span className="count-badge">6</span>
+                  Your stations <span className="count-badge">{stations.length}</span>
                 </h2>
                 <label className="admin-search">
                   <Search size={16} />
@@ -751,17 +805,32 @@ export default function Admin({ onExit, theme, setTheme }) {
               <div className="station-admin-header">
                 <Artwork station={station} />
                 <div>
-                  <span className={`status-label ${drafts[station.id]?.paused ? 'muted' : ''}`}>
+                  <span className={`status-label ${streamRow(station).active ? '' : 'muted'}`}>
                     <i />
-                    {drafts[station.id]?.paused ? 'Paused in preview' : 'Live in preview'}
+                    {station.live
+                      ? liveState
+                      : drafts[station.id]?.paused
+                        ? 'Paused in preview'
+                        : 'Live in preview'}
                   </span>
                   <h2>{stationName(station)}</h2>
-                  <p>{station.genre} · MP3 · 128 kbps · Stereo</p>
+                  <p>
+                    {withLiveConfig(station, live.config).genre} ·{' '}
+                    {station.live
+                      ? streamDescription(live.data) || 'Live stream'
+                      : 'MP3 · 128 kbps · Stereo'}
+                  </p>
                 </div>
-                <Button variant="secondary" onClick={() => toggleStation(station)}>
-                  {drafts[station.id]?.paused ? <Play size={15} /> : <Pause size={15} />}{' '}
-                  {drafts[station.id]?.paused ? 'Resume draft' : 'Pause draft'}
-                </Button>
+                {station.live ? (
+                  <Button variant="secondary" onClick={() => setTab('Embed')}>
+                    <Code2 size={15} /> Embed
+                  </Button>
+                ) : (
+                  <Button variant="secondary" onClick={() => toggleStation(station)}>
+                    {drafts[station.id]?.paused ? <Play size={15} /> : <Pause size={15} />}{' '}
+                    {drafts[station.id]?.paused ? 'Resume draft' : 'Pause draft'}
+                  </Button>
+                )}
               </div>
               <div className="tabs">
                 {[
@@ -773,6 +842,7 @@ export default function Admin({ onExit, theme, setTheme }) {
                   'Media',
                   'DJs',
                   'Analytics',
+                  ...(station.live ? ['Embed'] : []),
                 ].map((t) => (
                   <button className={tab === t ? 'active' : ''} key={t} onClick={() => setTab(t)}>
                     {t}
@@ -782,19 +852,49 @@ export default function Admin({ onExit, theme, setTheme }) {
               {tab === 'Overview' && (
                 <>
                   <div className="metric-grid">
-                    <Metric
-                      label="Current listeners"
-                      value={station.listeners.toLocaleString()}
-                      change="Sample listener count"
-                      icon={Headphones}
-                    />
-                    <Metric label="Bitrate" value="128 kbps" change="MP3 · Stereo" icon={Signal} />
-                    <Metric
-                      label="Buffer health"
-                      value="100%"
-                      change="No interruptions"
-                      icon={Activity}
-                    />
+                    {station.live ? (
+                      <>
+                        <Metric
+                          label="Current listeners"
+                          value={formatListeners(live.data?.listeners)}
+                          change="From the station server"
+                          icon={Headphones}
+                        />
+                        <Metric
+                          label="Bitrate"
+                          value={live.data?.bitrateKbps ? `${live.data.bitrateKbps} kbps` : '—'}
+                          change={live.data?.codec || 'Format unknown'}
+                          icon={Signal}
+                        />
+                        <Metric
+                          label="Stream uptime"
+                          value={formatUptime(live.data?.uptimeSeconds)}
+                          change={liveState}
+                          icon={Activity}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <Metric
+                          label="Current listeners"
+                          value={station.listeners.toLocaleString()}
+                          change="Sample listener count"
+                          icon={Headphones}
+                        />
+                        <Metric
+                          label="Bitrate"
+                          value="128 kbps"
+                          change="MP3 · Stereo"
+                          icon={Signal}
+                        />
+                        <Metric
+                          label="Buffer health"
+                          value="100%"
+                          change="No interruptions"
+                          icon={Activity}
+                        />
+                      </>
+                    )}
                     <Metric
                       label="Broadcast mode"
                       value={autoDJ ? 'AutoDJ' : 'Live DJ'}
@@ -806,14 +906,41 @@ export default function Admin({ onExit, theme, setTheme }) {
                   <div className="admin-info">
                     <Radio size={20} />
                     <p>
-                      <strong>{station.show}</strong>
-                      <br />
-                      {station.track} — {station.artist} · Hosted by {station.host}
+                      {station.live ? (
+                        <>
+                          <strong>Now playing</strong>
+                          <br />
+                          {nowPlayingText(withLiveMetadata(station, live.data, live.config))} ·{' '}
+                          {liveState === 'On air'
+                            ? 'From the station server'
+                            : `Station status: ${liveState}`}
+                        </>
+                      ) : (
+                        <>
+                          <strong>{station.show}</strong>
+                          <br />
+                          {station.track} — {station.artist} · Hosted by {station.host}
+                        </>
+                      )}
                     </p>
                   </div>
                 </>
               )}
-              {tab === 'Configuration' && (
+              {tab === 'Embed' && station.live && (
+                <EmbedPanel
+                  notify={notify}
+                  streamUrl={withLiveConfig(station, live.config).stream}
+                />
+              )}
+              {tab === 'Configuration' && station.live && (
+                // Remount once when the published settings first arrive.
+                <LiveStationForm
+                  key={live.config ? 'published' : 'defaults'}
+                  station={withLiveConfig(station, live.config)}
+                  notify={notify}
+                />
+              )}
+              {tab === 'Configuration' && !station.live && (
                 <StationForm
                   station={station}
                   draft={drafts[station.id]}
@@ -853,70 +980,91 @@ export default function Admin({ onExit, theme, setTheme }) {
             <>
               <div className="monitor-summary">
                 <span className="status-dot" />
-                <strong>
-                  {stations.filter((s) => !drafts[s.id]?.paused).length} streams in preview
-                </strong>
-                <span>Sample telemetry · Not connected to a live server</span>
+                <strong>SouthCity Live: {liveState}</strong>
+                <span>
+                  Live telemetry for SouthCity Live · Other stations show sample telemetry
+                </span>
               </div>
               <div className="monitor-grid">
-                {stations.map((s) => (
-                  <article className="monitor-card" key={s.id}>
-                    <div className="monitor-title">
-                      <Artwork station={s} />
-                      <div>
-                        <h3>{stationName(s)}</h3>
-                        <span className={`status-label ${drafts[s.id]?.paused ? 'muted' : ''}`}>
-                          <i />
-                          {drafts[s.id]?.paused ? 'Paused' : 'Healthy'}
+                {stations.map((s) => {
+                  const row = streamRow(s);
+                  return (
+                    <article className="monitor-card" key={s.id}>
+                      <div className="monitor-title">
+                        <Artwork station={s} />
+                        <div>
+                          <h3>{stationName(s)}</h3>
+                          <span className={`status-label ${row.active ? '' : 'muted'}`}>
+                            <i />
+                            {s.live ? liveState : row.active ? 'Healthy' : 'Paused'}
+                          </span>
+                        </div>
+                        <IconButton label={`Configure ${s.name}`} onClick={() => openStation(s)}>
+                          <Settings size={17} />
+                        </IconButton>
+                      </div>
+                      <div
+                        className={`waveform ${row.active ? '' : 'paused'}`}
+                        aria-label="Illustrative audio waveform"
+                      >
+                        {Array.from({ length: 40 }, (_, i) => (
+                          <i
+                            key={i}
+                            style={{ height: `${15 + Math.abs(Math.sin(i * 1.8)) * 65}%` }}
+                          />
+                        ))}
+                      </div>
+                      <div className="monitor-metrics">
+                        <span>
+                          <small>LISTENERS</small>
+                          <strong>{row.listeners}</strong>
+                        </span>
+                        <span>
+                          <small>BITRATE</small>
+                          <strong>
+                            {s.live ? (live.data?.bitrateKbps ?? '—') : 128} <em>kbps</em>
+                          </strong>
+                        </span>
+                        <span>
+                          <small>UPTIME</small>
+                          <strong>
+                            {s.live ? (
+                              formatUptime(live.data?.uptimeSeconds)
+                            ) : (
+                              <>
+                                99.98<em>%</em>
+                              </>
+                            )}
+                          </strong>
                         </span>
                       </div>
-                      <IconButton label={`Configure ${s.name}`} onClick={() => openStation(s)}>
-                        <Settings size={17} />
-                      </IconButton>
-                    </div>
-                    <div
-                      className={`waveform ${drafts[s.id]?.paused ? 'paused' : ''}`}
-                      aria-label="Illustrative audio waveform"
-                    >
-                      {Array.from({ length: 40 }, (_, i) => (
-                        <i
-                          key={i}
-                          style={{ height: `${15 + Math.abs(Math.sin(i * 1.8)) * 65}%` }}
-                        />
-                      ))}
-                    </div>
-                    <div className="monitor-metrics">
-                      <span>
-                        <small>LISTENERS</small>
-                        <strong>{drafts[s.id]?.paused ? '—' : s.listeners.toLocaleString()}</strong>
-                      </span>
-                      <span>
-                        <small>BITRATE</small>
-                        <strong>
-                          128 <em>kbps</em>
-                        </strong>
-                      </span>
-                      <span>
-                        <small>UPTIME</small>
-                        <strong>
-                          99.98<em>%</em>
-                        </strong>
-                      </span>
-                    </div>
-                    <div className="monitor-bottom">
-                      <span>
-                        <strong>{s.show}</strong>
-                        <small>{s.host}</small>
-                      </span>
-                      <IconButton
-                        label={`${drafts[s.id]?.paused ? 'Resume' : 'Pause'} ${s.name} draft`}
-                        onClick={() => toggleStation(s)}
-                      >
-                        {drafts[s.id]?.paused ? <Play size={17} /> : <Pause size={17} />}
-                      </IconButton>
-                    </div>
-                  </article>
-                ))}
+                      <div className="monitor-bottom">
+                        <span>
+                          <strong>{row.nowPlaying}</strong>
+                          <small>{row.source}</small>
+                        </span>
+                        {s.live ? (
+                          <IconButton
+                            label={`Embed ${s.name}`}
+                            onClick={() => {
+                              openStation(s);
+                              setTab('Embed');
+                            }}
+                          >
+                            <Code2 size={17} />
+                          </IconButton>
+                        ) : (
+                          <IconButton
+                            label={`${row.active ? 'Pause' : 'Resume'} ${s.name} draft`}
+                            onClick={() => toggleStation(s)}
+                          >
+                            {row.active ? <Pause size={17} /> : <Play size={17} />}
+                          </IconButton>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </>
           )}
@@ -1357,6 +1505,170 @@ function AutoDJ({ enabled, onToggle, onPlaylist }) {
     </div>
   );
 }
+function EmbedPanel({ notify, streamUrl }) {
+  const secure = streamUrl.startsWith('https:');
+  const snippets = [
+    ['Stream URL', 'For media players, radio directories, and the SouthCity apps.', streamUrl],
+    [
+      'Website player',
+      'Paste into any web page to add a play button for the live stream.',
+      `<audio controls preload="none" src="${streamUrl}"></audio>`,
+    ],
+    [
+      'Now playing data',
+      'Current song, listeners, and bitrate as JSON. Read it server-side; browsers can’t fetch it cross-site.',
+      publicStatsUrl(streamUrl),
+    ],
+  ];
+  const copy = (label, value) =>
+    navigator.clipboard
+      ?.writeText(value)
+      .then(() => notify(`${label} copied`))
+      .catch(() => notify('Copy failed. Select the text and copy it manually.'));
+  return (
+    <section className="admin-panel embed-panel">
+      <div className="panel-heading">
+        <div>
+          <h2>Embed & share</h2>
+          <p>Public listener addresses. They never contain Centova Cast credentials.</p>
+        </div>
+      </div>
+      {!secure && (
+        <div className="admin-alert">
+          <AlertTriangle size={18} />
+          <div>
+            <strong>This stream is HTTP-only</strong>
+            <p>
+              Browsers block HTTP audio on HTTPS websites, including a deployed SouthCity app.
+              Enable SSL for the stream or serve it through an HTTPS proxy, then publish the HTTPS
+              address from the Configuration tab.
+            </p>
+          </div>
+        </div>
+      )}
+      {snippets.map(([label, hint, value]) => (
+        <div className="embed-row" key={label}>
+          <div>
+            <strong>{label}</strong>
+            <small>{hint}</small>
+          </div>
+          <code>{value}</code>
+          <Button variant="secondary" onClick={() => copy(label, value)}>
+            <Copy size={15} /> Copy
+          </Button>
+        </div>
+      ))}
+    </section>
+  );
+}
+function LiveStationForm({ station, notify }) {
+  const [state, setState] = useState({ phase: 'idle' }),
+    [streamUrl, setStreamUrl] = useState(station.stream);
+  const publish = async (input, force = false) => {
+    const { value, error } = validateLiveStation(input);
+    if (error) return setState({ phase: 'failed', error });
+    setState({ phase: 'publishing' });
+    try {
+      await publishLiveStation(value, { force });
+      setState({ phase: 'published' });
+      notify(`${value.name} published to the SouthCity app`);
+    } catch (e) {
+      setState({ phase: 'failed', error: e.message, unreachable: e.unreachable, value });
+    }
+  };
+  return (
+    <form
+      className="admin-panel configuration-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        publish(Object.fromEntries(new FormData(e.currentTarget)));
+      }}
+    >
+      <h2>Station configuration</h2>
+      <p>
+        Publishing updates the SouthCity app for everyone using this local server. Listeners get a
+        new stream address the next time they press play.
+      </p>
+      <label className="form-label">
+        Station name
+        <input name="name" defaultValue={station.name} required maxLength={80} />
+      </label>
+      <label className="form-label">
+        Description
+        <textarea
+          name="description"
+          rows="3"
+          defaultValue={station.description}
+          required
+          maxLength={400}
+        />
+      </label>
+      <div className="form-columns">
+        <label className="form-label">
+          Genre
+          <select name="genre" defaultValue={station.genre}>
+            {stationGenres.map((g) => (
+              <option key={g}>{g}</option>
+            ))}
+          </select>
+        </label>
+        <label className="form-label">
+          Language
+          <select name="language" defaultValue={station.language}>
+            {stationLanguages.map((l) => (
+              <option key={l}>{l}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="form-label">
+        Public stream URL
+        <input
+          name="streamUrl"
+          type="url"
+          value={streamUrl}
+          onChange={(e) => setStreamUrl(e.target.value)}
+          required
+        />
+        <small>
+          {streamUrl.startsWith('http:')
+            ? 'HTTP streams play in this local preview but are blocked on HTTPS websites. Use an HTTPS address before deploying.'
+            : 'The public listener address from Centova Cast. Never include admin credentials.'}
+        </small>
+      </label>
+      {state.phase === 'failed' && (
+        <div className="admin-alert form-alert" role="alert">
+          <AlertTriangle size={18} />
+          <div>
+            <strong>Not published</strong>
+            <p>{state.error}</p>
+          </div>
+          {state.unreachable && (
+            <Button type="button" variant="secondary" onClick={() => publish(state.value, true)}>
+              Publish anyway
+            </Button>
+          )}
+        </div>
+      )}
+      {state.phase === 'published' && (
+        <p className="form-success" role="status">
+          <CheckCircle2 size={15} /> Published. The SouthCity app picks this up within 15 seconds.
+        </p>
+      )}
+      <Button type="submit" disabled={state.phase === 'publishing'}>
+        {state.phase === 'publishing' ? (
+          <>
+            <RefreshCw size={16} className="spin" /> Checking stream & publishing…
+          </>
+        ) : (
+          <>
+            <Upload size={16} /> Publish to app
+          </>
+        )}
+      </Button>
+    </form>
+  );
+}
 function StationForm({ station, draft, onSave }) {
   return (
     <form
@@ -1385,7 +1697,7 @@ function StationForm({ station, draft, onSave }) {
         <label className="form-label">
           Genre
           <select name="genre" defaultValue={draft?.genre || station.genre}>
-            {['Eclectic', 'Jazz', 'Indie', 'Chill', 'Soul', 'Electronic'].map((g) => (
+            {stationGenres.map((g) => (
               <option key={g}>{g}</option>
             ))}
           </select>
@@ -1393,8 +1705,9 @@ function StationForm({ station, draft, onSave }) {
         <label className="form-label">
           Language
           <select name="language" defaultValue={draft?.language || station.language}>
-            <option>English</option>
-            <option>Instrumental</option>
+            {stationLanguages.map((l) => (
+              <option key={l}>{l}</option>
+            ))}
           </select>
         </label>
       </div>

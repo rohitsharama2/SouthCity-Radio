@@ -1,5 +1,6 @@
 import React from 'react';
 import { Radio, Play, Heart, ArrowUpRight, X, Headphones, Music2 } from 'lucide-react';
+import { compactListeners, nowPlayingText } from '../data/liveStream.js';
 export function Brand({ compact = false }) {
   return (
     <div className="brand">
@@ -42,6 +43,18 @@ export function Artwork({ station, className = '' }) {
       role="img"
       aria-label={`${station.name} artwork`}
     >
+      {station.art === 'live' && (
+        <>
+          <span className="art-top">ON AIR · STREAMING NOW</span>
+          <div className="live-rings" />
+          <div className="live-title">
+            south
+            <br />
+            city<span>live.</span>
+          </div>
+          <span className="art-bottom">STRAIGHT FROM THE STUDIO</span>
+        </>
+      )}
       {station.art === 'originals' && (
         <>
           <span className="art-top">FROM THE HEART OF THE CITY</span>
@@ -156,7 +169,7 @@ export function StationCard({ station, onOpen, onPlay, onFavorite, isFavorite = 
         </span>
         <span>
           <Headphones size={11} />
-          {(station.listeners / 1000).toFixed(1)}k
+          {compactListeners(station.listeners)}
         </span>
       </div>
       <p className="station-track">
@@ -165,7 +178,13 @@ export function StationCard({ station, onOpen, onPlay, onFavorite, isFavorite = 
           <i />
           <i />
         </span>
-        {station.artist} <span>— {station.track}</span>
+        {station.artist && station.track ? (
+          <>
+            {station.artist} <span>— {station.track}</span>
+          </>
+        ) : (
+          nowPlayingText(station)
+        )}
       </p>
     </article>
   );

@@ -2,7 +2,7 @@
 
 **Your city. Your sound.** A premium, responsive radio product with an independent consumer identity and a separate broadcast operations workspace.
 
-This repository contains a working **React web prototype**, optimized for mobile and desktop. It is not a native iOS/Android application or a connected Centova Cast management client. All administrative mutations are local drafts; no live station is changed.
+This repository contains a working **React web prototype**, optimized for mobile and desktop. It is not a native iOS/Android application or a connected Centova Cast management client. **SouthCity Live** plays the real station broadcast; the other stations are samples. All administrative mutations are local drafts; no live station is changed.
 
 ## Run locally
 
@@ -90,12 +90,25 @@ The audio provider wraps both workspaces. Navigation does not recreate the audio
 
 ## Audio and data honesty
 
-- **Audio is real; station identity and metadata are sample content.** Preview streams are publicly accessible SomaFM streams. The app labels this in the player; displayed track/show metadata is illustrative and does not identify the audio actually playing.
+- **SouthCity Live is the real station.** It plays the Centova Cast–managed SHOUTcast stream and shows the server's current song, recent tracks, listener count, bitrate, and uptime, polled every 15 seconds while the app is open. See [Live station](#live-station).
+- **The other six stations are samples.** Their audio is real but their identity and metadata are not: preview streams are publicly accessible SomaFM streams. The app labels this in the player; displayed track/show metadata is illustrative and does not identify the audio actually playing.
 - Playing, paused, connecting, buffering, network error, offline, and unavailable states are represented. Network and playback events drive the player; every state can also be inspected in the design gallery.
 - Listen history records selected stations, not verified completed listening sessions.
 - Browser playback can continue while navigating and supports compatible system media controls. **Reliable native background playback, interruptions, lock-screen artwork, Bluetooth routing, and Android foreground services require native integration and device testing.**
 - Favorites, profile, shows, and theme survive browser refresh. Accounts, push notifications, downloads, recorded episodes, entitlement enforcement, and cross-device sync are not implemented.
 - Photos load from Unsplash, avatars from Pravatar, and fonts from Google Fonts. Replace remote samples with owned/approved, self-hosted assets before release.
+
+## Live station
+
+**Edit it from the admin:** Stations → SouthCity Live → **Configuration**. Change the name, description, genre, language, or public stream URL, then press **Publish to app**. The customer app picks the change up within 15 seconds; listeners hear a new stream address the next time they press play.
+
+- Publishing goes through the local SouthCity server built into `npm run dev:app`, `npm run dev:admin`, and `npm run preview` ([`server/liveStation.js`](server/liveStation.js)). It saves to `.local/live-station.json` (not committed). Delete that file to return to the defaults in [`src/data/liveStream.js`](src/data/liveStream.js).
+- Before saving, the server test-connects to the stream. If it can't connect, the admin says why and offers **Publish anyway** (for example, to save an HTTPS address before SSL is switched on).
+- Stream URLs must be public listener addresses. URLs containing a username or password are rejected.
+- Writes are accepted only from the same computer. This is not account security: a deployed admin needs the authenticated SouthCity API described in [docs/INTEGRATION.md](docs/INTEGRATION.md). A static host without the SouthCity server keeps the defaults and the admin reports that publishing is unavailable.
+- **Audio** plays directly from the stream URL. **Metadata** (`/stats`, `/played`) has no CORS headers, so the SouthCity server proxies it at `/live-metadata`, following whichever stream is published.
+- **HTTPS:** the current server (`85.25.185.202:8665`) answers plain HTTP only; its HTTPS connection is refused. Browsers block HTTP audio on HTTPS pages, so a deployed HTTPS app needs SSL enabled for the stream in Centova Cast or a TLS reverse proxy with a domain. Until then, listen via `http://localhost:5180` or `http://<your-computer's-LAN-IP>:5180` on a phone.
+- **Embed:** Stations → SouthCity Live → **Embed** lists the stream URL, a copyable website player snippet, and the now-playing JSON address.
 
 ## Centova Cast boundary
 

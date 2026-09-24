@@ -2,7 +2,7 @@
 
 ## Consumer
 
-**Discover → Listen live → Follow → Engage → Return** is the core loop. Discovery has real filtering over a six-station fixture catalog; listening uses public preview streams; follows and history are local; engagement is currently show exploration and local reminder preference; returning restores preferences and collections.
+**Discover → Listen live → Follow → Engage → Return** is the core loop. Discovery has real filtering over a seven-station catalog; SouthCity Live plays the real station stream with polled now-playing metadata, and the other six stations use public preview streams; follows and history are local; engagement is currently show exploration and local reminder preference; returning restores preferences and collections.
 
 | Feature                        | Source                                                     | Behavior to preserve                                                                            |
 | ------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
@@ -44,4 +44,4 @@ Admin configuration drafts do not modify consumer fixtures. This preserves the d
 
 ## Known limits to carry forward
 
-No backend, auth, true real-time metadata updates, native build, offline downloads, episode playback, actual push delivery, live administrator control, or deployment pipeline is implemented. Browser-level checks exercise a responsive web app, not iOS/Android native behavior. Future work should implement these explicitly rather than presenting the prototype as production-connected.
+No backend, auth, pushed real-time metadata (SouthCity Live polls public stats every 15 seconds), native build, offline downloads, episode playback, actual push delivery, live administrator control, or deployment pipeline is implemented. Browser-level checks exercise a responsive web app, not iOS/Android native behavior. Future work should implement these explicitly rather than presenting the prototype as production-connected.

@@ -54,7 +54,23 @@ import {
   Modal,
 } from './components/ui.jsx';
 import { AudioProvider, useAudio } from './components/AudioProvider.jsx';
-import { stations, genres, schedule, filterStations, demoStreamNote } from './data/stations.js';
+import {
+  stations,
+  genres,
+  schedule,
+  filterStations,
+  demoStreamNote,
+  liveStreamNote,
+} from './data/stations.js';
+import { useLiveStream } from './components/useLiveStream.js';
+import {
+  formatListeners,
+  isBlockedMixedContent,
+  nowPlayingText,
+  streamDescription,
+  withLiveConfig,
+  withLiveMetadata,
+} from './data/liveStream.js';
 import Admin from './components/Admin.jsx';
 import { workspacePorts } from './data/workspaces.js';
 import { readLocal as readSaved, writeLocal, removeLocal } from './data/storage.js';
@@ -75,6 +91,10 @@ export default function App() {
 }
 function RadioApp() {
   const audio = useAudio();
+  const live = useLiveStream();
+  const withLive = (s) => withLiveMetadata(s, live.data, live.config);
+  // Playback and selection use the catalog entry plus any published live settings.
+  const baseStation = (s) => withLiveConfig(stations.find((x) => x.id === s.id) || s, live.config);
   const [page, setPage] = useState(import.meta.env.MODE === 'admin' ? 'Admin' : 'Home'),
     [selected, setSelected] = useState(stations[0]),
     [query, setQuery] = useState(''),
@@ -159,10 +179,11 @@ function RadioApp() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
   const openStation = (s) => {
-    setSelected(s);
+    setSelected(baseStation(s));
     go('Station');
   };
   const play = (s) => {
+    s = baseStation(s);
     audio.play(s);
     setHistory((h) => [s.id, ...h.filter((id) => id !== s.id)].slice(0, 12));
   };
@@ -174,7 +195,7 @@ function RadioApp() {
   const card = (s) => (
     <StationCard
       key={s.id}
-      station={s}
+      station={withLive(s)}
       onOpen={openStation}
       onPlay={play}
       onFavorite={toggleFavorite}
@@ -204,9 +225,13 @@ function RadioApp() {
         setToast('Could not share. Copy the station URL from your browser.');
     }
   };
-  const activeStation = audio.station || stations[0];
+  const activeStation = withLive(audio.station || stations[0]);
+  const activeIndex = stations.findIndex((s) => s.id === activeStation.id);
+  const current = withLive(selected);
+  const liveOffAir = live.phase === 'ready' && !live.data.onAir;
+  const insecureStream = (s) => isBlockedMixedContent(s.stream, location.protocol);
   const playing = ['playing', 'connecting', 'buffering'].includes(audio.status);
-  const filtered = filterStations(stations, query, genre, language);
+  const filtered = filterStations(stations.map(withLive), query, genre, language);
   if (page === 'Design System')
     return <DesignSystem onExit={() => go('Profile')} theme={theme} setTheme={setTheme} />;
   if (page === 'Admin')
@@ -445,7 +470,7 @@ function RadioApp() {
                     </p>
                     <button
                       onClick={() => {
-                        setSelected(stations[0]);
+                        setSelected(stations.find((s) => s.id === 'southcity'));
                         go('Show');
                       }}
                     >
@@ -563,8 +588,9 @@ function RadioApp() {
                   onAction={() => go('Live')}
                 />
                 <div className="popular-list">
-                  {[...stations]
-                    .sort((a, b) => b.listeners - a.listeners)
+                  {stations
+                    .map(withLive)
+                    .sort((a, b) => (b.listeners ?? -1) - (a.listeners ?? -1))
                     .slice(0, 4)
                     .map((s, i) => (
                       <div className="popular-row" key={s.id}>
@@ -578,14 +604,12 @@ function RadioApp() {
                         </button>
                         <button className="row-title" onClick={() => openStation(s)}>
                           <strong>{s.name}</strong>
-                          <small>
-                            {s.artist} — {s.track}
-                          </small>
+                          <small>{nowPlayingText(s)}</small>
                         </button>
                         <span className="genre-label">{s.genre}</span>
                         <span className="row-listeners">
                           <Headphones size={14} />
-                          {s.listeners.toLocaleString()}
+                          {formatListeners(s.listeners)}
                         </span>
                         <IconButton label={`Play ${s.name}`} onClick={() => play(s)}>
                           <Play size={17} />
@@ -646,6 +670,7 @@ function RadioApp() {
                   <option>All languages</option>
                   <option>English</option>
                   <option>Instrumental</option>
+                  <option>Multilingual</option>
                 </select>
               </div>
               <SectionHeading
@@ -682,7 +707,10 @@ function RadioApp() {
                   />
                   <Schedule
                     onShow={(show) => {
-                      setSelected(stations.find((s) => s.host === show.host) || stations[0]);
+                      setSelected(
+                        stations.find((s) => s.host === show.host) ||
+                          stations.find((s) => s.id === 'southcity'),
+                      );
                       go('Show');
                     }}
                   />
@@ -707,7 +735,7 @@ function RadioApp() {
                   <p className="detail-tagline">{selected.tagline}</p>
                   <p>{selected.description}</p>
                   <div className="detail-listeners">
-                    <Headphones size={15} /> {selected.listeners.toLocaleString()} tuned in{' '}
+                    <Headphones size={15} /> {formatListeners(current.listeners)} tuned in{' '}
                     <span>·</span>
                     <Globe size={15} /> {selected.language}
                   </div>
@@ -742,59 +770,100 @@ function RadioApp() {
                   <i />
                 </span>
                 <div>
-                  <small>ON AIR NOW · ILLUSTRATIVE PROGRAMMING</small>
-                  <strong>{selected.show}</strong>
+                  <small>
+                    {!current.live
+                      ? 'ON AIR NOW · ILLUSTRATIVE PROGRAMMING'
+                      : liveOffAir
+                        ? 'OFF AIR · THE STATION IS NOT BROADCASTING'
+                        : 'ON AIR NOW · FROM THE STATION SERVER'}
+                  </small>
+                  <strong>{current.live ? current.track || current.show : current.show}</strong>
                   <span>
-                    {selected.artist} — {selected.track}
+                    {current.live ? current.artist || current.name : nowPlayingText(current)}
                   </span>
                 </div>
-                <button className="text-button" onClick={() => go('Show')}>
-                  With {selected.host}
-                  <ArrowUpRight size={17} />
-                </button>
+                {!current.live && (
+                  <button className="text-button" onClick={() => go('Show')}>
+                    With {selected.host}
+                    <ArrowUpRight size={17} />
+                  </button>
+                )}
               </div>
+              {!current.live && (
+                <>
+                  <section className="content-section">
+                    <SectionHeading
+                      title="A day on this frequency"
+                      subtitle="All times shown in India Standard Time (UTC+5:30)."
+                    />
+                    <Schedule
+                      onShow={(show) => {
+                        setSelected(stations.find((s) => s.host === show.host) || selected);
+                        go('Show');
+                      }}
+                    />
+                  </section>
+                  <section className="content-section">
+                    <SectionHeading title="Behind the microphone" />
+                    <div className="host-card">
+                      <img src="https://i.pravatar.cc/120?img=47" alt={selected.host} />
+                      <div>
+                        <h3>{selected.host}</h3>
+                        <p>
+                          Collector of records. Teller of stories. Your companion on the airwaves.
+                        </p>
+                      </div>
+                      <Button variant="secondary" onClick={() => go('Show')}>
+                        Explore the show <ArrowUpRight size={15} />
+                      </Button>
+                    </div>
+                  </section>
+                </>
+              )}
               <section className="content-section">
                 <SectionHeading
-                  title="A day on this frequency"
-                  subtitle="All times shown in India Standard Time (UTC+5:30)."
+                  title="Recently on air"
+                  subtitle={current.live ? 'From the station server' : 'Sample track history'}
                 />
-                <Schedule
-                  onShow={(show) => {
-                    setSelected(stations.find((s) => s.host === show.host) || selected);
-                    go('Show');
-                  }}
-                />
-              </section>
-              <section className="content-section">
-                <SectionHeading title="Behind the microphone" />
-                <div className="host-card">
-                  <img src="https://i.pravatar.cc/120?img=47" alt={selected.host} />
-                  <div>
-                    <h3>{selected.host}</h3>
-                    <p>Collector of records. Teller of stories. Your companion on the airwaves.</p>
-                  </div>
-                  <Button variant="secondary" onClick={() => go('Show')}>
-                    Explore the show <ArrowUpRight size={15} />
-                  </Button>
-                </div>
-              </section>
-              <section className="content-section">
-                <SectionHeading title="Recently on air" subtitle="Sample track history" />
-                <div className="track-list">
-                  {[selected, ...stations.filter((s) => s.id !== selected.id).slice(0, 3)].map(
-                    (s, i) => (
-                      <div key={s.id}>
-                        <span className="rank">0{i + 1}</span>
+                {current.live && !live.history.length ? (
+                  <p className="modal-description">
+                    {live.phase === 'loading'
+                      ? 'Checking the station for recent tracks…'
+                      : 'Recent tracks aren’t available from the station right now.'}
+                  </p>
+                ) : (
+                  <div className="track-list">
+                    {(current.live
+                      ? live.history.map((t) => ({
+                          key: t.playedAt,
+                          track: t.title,
+                          artist: t.artist || current.name,
+                          time: new Date(t.playedAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }),
+                        }))
+                      : [current, ...stations.filter((s) => s.id !== selected.id && !s.live)]
+                          .slice(0, 4)
+                          .map((s, i) => ({
+                            key: s.id,
+                            track: s.track,
+                            artist: s.artist,
+                            time: i === 0 ? 'Now' : `${i * 7} min ago`,
+                          }))
+                    ).map((t, i) => (
+                      <div key={t.key}>
+                        <span className="rank">{String(i + 1).padStart(2, '0')}</span>
                         <Music2 size={18} />
                         <span>
-                          <strong>{s.track}</strong>
-                          <small>{s.artist}</small>
+                          <strong>{t.track}</strong>
+                          <small>{t.artist}</small>
                         </span>
-                        <time>{i === 0 ? 'Now' : `${i * 7} min ago`}</time>
+                        <time>{t.time}</time>
                       </div>
-                    ),
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </section>
               <section className="content-section">
                 <SectionHeading title="Keep the good sounds coming" />
@@ -1132,7 +1201,9 @@ function RadioApp() {
             <small>
               {audio.station
                 ? audio.status === 'playing'
-                  ? 'SomaFM preview audio'
+                  ? activeStation.live
+                    ? nowPlayingText(activeStation)
+                    : 'SomaFM preview audio'
                   : audio.status.charAt(0).toUpperCase() + audio.status.slice(1)
                 : 'Your next good listen starts here'}{' '}
               <span>·</span> {activeStation.genre}
@@ -1154,18 +1225,14 @@ function RadioApp() {
           <IconButton
             label="Previous station"
             className="skip-button"
-            onClick={() =>
-              play(
-                stations[(stations.indexOf(activeStation) + stations.length - 1) % stations.length],
-              )
-            }
+            onClick={() => play(stations[(activeIndex + stations.length - 1) % stations.length])}
           >
             <SkipForward size={18} className="flip" />
           </IconButton>
           <button
             className="main-play"
             aria-label={playing ? 'Pause audio' : 'Play audio'}
-            onClick={() => (audio.station ? audio.toggle() : play(activeStation))}
+            onClick={() => (playing ? audio.toggle() : play(activeStation))}
           >
             {['connecting', 'buffering'].includes(audio.status) ? (
               <LoaderCircle size={22} className="spin" />
@@ -1178,7 +1245,7 @@ function RadioApp() {
           <IconButton
             label="Next station"
             className="skip-button"
-            onClick={() => play(stations[(stations.indexOf(activeStation) + 1) % stations.length])}
+            onClick={() => play(stations[(activeIndex + 1) % stations.length])}
           >
             <SkipForward size={18} />
           </IconButton>
@@ -1192,7 +1259,11 @@ function RadioApp() {
           </span>
         </div>
         <div className="player-right">
-          <span className="audio-quality">PREVIEW · 128 KBPS</span>
+          <span className="audio-quality">
+            {activeStation.live
+              ? ['LIVE', streamDescription(live.data)].filter(Boolean).join(' · ').toUpperCase()
+              : 'PREVIEW · 128 KBPS'}
+          </span>
           <IconButton
             label={audio.volume === 0 ? 'Unmute' : 'Mute'}
             onClick={() => audio.setVolume(audio.volume === 0 ? 0.7 : 0)}
@@ -1243,14 +1314,17 @@ function RadioApp() {
         <Modal title="On your frequency" onClose={() => setModal(null)}>
           <div className="full-player">
             <div className="player-context">
-              <Radio size={15} /> INDEPENDENT RADIO · PREVIEW
+              <Radio size={15} />{' '}
+              {activeStation.live ? 'LIVE BROADCAST' : 'INDEPENDENT RADIO · PREVIEW'}
             </div>
             <Artwork station={activeStation} />
             <div className="full-player-title">
               <div>
                 <h2>{activeStation.name}</h2>
                 <p>
-                  {activeStation.show} · with {activeStation.host}
+                  {activeStation.live
+                    ? nowPlayingText(activeStation)
+                    : `${activeStation.show} · with ${activeStation.host}`}
                 </p>
               </div>
               <IconButton label="Toggle favorite" onClick={() => toggleFavorite(activeStation.id)}>
@@ -1262,8 +1336,18 @@ function RadioApp() {
             </div>
             <div className="full-player-status">
               <span className="status-dot" />
-              {audio.station ? audio.status : 'Ready to connect'}
-              <span>128 kbps · MP3</span>
+              {audio.station
+                ? audio.status
+                : activeStation.live && liveOffAir
+                  ? 'Station is off air'
+                  : 'Ready to connect'}
+              <span>
+                {activeStation.live
+                  ? `${formatListeners(activeStation.listeners)} listening · ${
+                      streamDescription(live.data) || 'Live stream'
+                    }`
+                  : '128 kbps · MP3'}
+              </span>
             </div>
             {['connection error', 'offline', 'station unavailable'].includes(audio.status) && (
               <div className="error-state">
@@ -1271,7 +1355,11 @@ function RadioApp() {
                 <p>
                   {audio.status === 'offline'
                     ? 'You’re offline. Reconnect to keep listening.'
-                    : 'This stream couldn’t connect. Try again or choose another station.'}
+                    : insecureStream(activeStation)
+                      ? 'This station streams over HTTP, which browsers block on secure (HTTPS) pages. It needs an HTTPS stream address.'
+                      : activeStation.live && liveOffAir
+                        ? 'The station isn’t broadcasting right now. Try again shortly.'
+                        : 'This stream couldn’t connect. Try again or choose another station.'}
                 </p>
                 <button onClick={() => play(activeStation)}>Retry</button>
               </div>
@@ -1283,7 +1371,7 @@ function RadioApp() {
               <button
                 className="main-play large-play"
                 aria-label={playing ? 'Pause audio' : 'Play audio'}
-                onClick={() => (audio.station ? audio.toggle() : play(activeStation))}
+                onClick={() => (playing ? audio.toggle() : play(activeStation))}
               >
                 {['connecting', 'buffering'].includes(audio.status) ? (
                   <LoaderCircle className="spin" />
@@ -1312,20 +1400,27 @@ function RadioApp() {
             <button
               className="up-next"
               onClick={() => {
-                setSelected(activeStation);
+                setSelected(baseStation(activeStation));
                 setModal(null);
                 go('Station');
               }}
             >
-              <span>
-                <small>UP NEXT · SAMPLE SCHEDULE</small>
-                <strong>
-                  Blue Note Sessions <span>19:00 IST</span>
-                </strong>
-              </span>
+              {activeStation.live ? (
+                <span>
+                  <small>FROM THE STATION</small>
+                  <strong>Recently played</strong>
+                </span>
+              ) : (
+                <span>
+                  <small>UP NEXT · SAMPLE SCHEDULE</small>
+                  <strong>
+                    Blue Note Sessions <span>19:00 IST</span>
+                  </strong>
+                </span>
+              )}
               <ChevronRight size={20} />
             </button>
-            <p className="preview-note">{demoStreamNote}</p>
+            <p className="preview-note">{activeStation.live ? liveStreamNote : demoStreamNote}</p>
           </div>
         </Modal>
       )}
@@ -1460,8 +1555,8 @@ function RadioApp() {
                   voices, and a world of music.
                 </p>
                 <p>
-                  This interactive preview uses illustrative programming and publicly accessible
-                  SomaFM streams.
+                  SouthCity Live plays the real station broadcast. Other stations use illustrative
+                  programming and publicly accessible SomaFM streams.
                 </p>
               </>
             ) : modal === 'privacy' ? (

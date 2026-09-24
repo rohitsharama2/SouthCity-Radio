@@ -1,4 +1,23 @@
 import { test, expect } from '@playwright/test';
+import {
+  liveServer,
+  liveMetadataPath,
+  liveEndpoints,
+  liveStationDefaults,
+} from '../src/data/liveStream.js';
+// Synthetic responses keep tests independent of the real station server.
+const liveStats = {
+  currentlisteners: 3,
+  streamstatus: 1,
+  streamuptime: 3720,
+  bitrate: '48',
+  content: 'audio/aacp',
+  songtitle: 'Test Artist - Test Live Song',
+};
+const livePlayed = [
+  { playedat: 1790234235, title: 'Test Artist - Test Live Song' },
+  { playedat: 1790234004, title: 'Unknown - Earlier Live Song' },
+];
 const navigate = async (page, label) => {
   await page
     .getByRole('navigation', {
@@ -8,7 +27,26 @@ const navigate = async (page, label) => {
     .getByRole('button', { name: label, exact: true })
     .click();
 };
+// Stands in for the local SouthCity server so tests never read or write .local config.
+const mockLiveConfig = async (page) => {
+  let config = { ...liveStationDefaults, updatedAt: null };
+  await page.route(`**${liveEndpoints.config}`, async (route) => {
+    if (route.request().method() === 'PUT') {
+      const { force, ...values } = route.request().postDataJSON();
+      config = { ...values, updatedAt: new Date().toISOString() };
+    }
+    return route.fulfill({ json: config });
+  });
+};
 test.beforeEach(async ({ page }) => {
+  await mockLiveConfig(page);
+  await page.route(`${liveServer}/**`, (route) => route.abort('failed'));
+  await page.route(`**${liveMetadataPath}/**`, (route) => {
+    const { pathname } = new URL(route.request().url());
+    if (pathname.endsWith('/stats')) return route.fulfill({ json: liveStats });
+    if (pathname.endsWith('/played')) return route.fulfill({ json: livePlayed });
+    return route.abort('failed');
+  });
   await page.goto('/');
 });
 test('home is responsive and navigation leads to searchable discovery', async ({ page }) => {
@@ -23,7 +61,7 @@ test('home is responsive and navigation leads to searchable discovery', async ({
   await page.getByRole('textbox', { name: 'Search all content' }).fill('not-a-station');
   await expect(page.getByText('No frequencies found')).toBeVisible();
   await page.getByRole('button', { name: 'Reset filters' }).click();
-  await expect(page.locator('.station-card')).toHaveCount(6);
+  await expect(page.locator('.station-card')).toHaveCount(7);
 });
 test('following a station persists across reloads', async ({ page }) => {
   await navigate(page, 'Discover');
@@ -64,7 +102,48 @@ test('player handles failures without losing navigation and sleep timer is confi
   await page.getByRole('button', { name: '30 minutes', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Sleep timer set for 30 minutes');
   await navigate(page, 'Discover');
+  await expect(page.locator('.player-track')).toContainText('SouthCity Live');
+});
+test('live station shows server metadata and switching keeps the queue order', async ({ page }) => {
+  await navigate(page, 'Discover');
+  await page.getByRole('textbox', { name: 'Search all content' }).fill('Test Live Song');
+  await expect(page.locator('.station-card')).toHaveCount(1);
+  await page.getByRole('button', { name: 'View SouthCity Live', exact: true }).click();
+  await expect(page.getByText('ON AIR NOW · FROM THE STATION SERVER')).toBeVisible();
+  await expect(page.locator('.detail-listeners')).toContainText('3 tuned in');
+  await expect(page.getByText('Earlier Live Song')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'A day on this frequency' })).toHaveCount(0);
+  await page.route('https://ice1.somafm.com/**', (route) => route.abort('failed'));
+  await page.getByRole('button', { name: 'Listen live', exact: true }).click();
+  await expect(page.locator('.player-track')).toContainText('SouthCity Live');
+  await expect(page.locator('.audio-quality')).toHaveText('LIVE · 48 KBPS · AAC+');
+  // Station skipping is a desktop mini-player control.
+  if (page.viewportSize().width < 761) return;
+  await page.getByRole('button', { name: 'Next station', exact: true }).click();
   await expect(page.locator('.player-track')).toContainText('SouthCity Originals');
+});
+test('admin shows live stream telemetry and embed code', async ({ page }) => {
+  await navigate(page, 'Profile');
+  await page.getByRole('button', { name: 'Creator & admin portal', exact: true }).last().click();
+  const adminNav = async (name) => {
+    if (page.viewportSize().width < 761)
+      await page.getByRole('button', { name: 'Toggle admin navigation' }).click();
+    await page
+      .getByRole('navigation', { name: 'Admin navigation' })
+      .getByRole('button', { name })
+      .click();
+  };
+  await adminNav(/^Live Streams/);
+  await expect(page.locator('.monitor-summary')).toContainText('SouthCity Live: On air');
+  const card = page.locator('.monitor-card').filter({ hasText: 'SouthCity Live' });
+  await expect(card).toContainText('Test Artist — Test Live Song');
+  await expect(card).toContainText('1h 2m');
+  await card.getByRole('button', { name: 'Embed SouthCity Live' }).click();
+  await expect(page.getByRole('heading', { name: 'Embed & share' })).toBeVisible();
+  await expect(page.locator('.embed-row code').nth(1)).toHaveText(
+    `<audio controls preload="none" src="${liveServer}/stream"></audio>`,
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 test('theme and profile persist, component gallery reuses the design system', async ({ page }) => {
   await navigate(page, 'Profile');
@@ -185,4 +264,35 @@ test('dialog traps keyboard focus and returns focus on Escape', async ({ page })
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
   await expect(edit).toBeFocused();
+});
+test('admin publishes live station changes to the consumer app', async ({ page }) => {
+  const streamRequests = [];
+  await page.route('http://127.0.0.1:9/**', (route) => {
+    streamRequests.push(route.request().url());
+    return route.abort('failed');
+  });
+  await navigate(page, 'Profile');
+  await page.getByRole('button', { name: 'Creator & admin portal', exact: true }).last().click();
+  if (page.viewportSize().width < 761)
+    await page.getByRole('button', { name: 'Toggle admin navigation' }).click();
+  await page
+    .getByRole('navigation', { name: 'Admin navigation' })
+    .getByRole('button', { name: 'Stations', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Manage SouthCity Live' }).click();
+  await page.getByRole('button', { name: 'Configuration', exact: true }).click();
+  await page.getByLabel('Public stream URL').fill('http://admin:secret@127.0.0.1:9/stream');
+  await page.getByRole('button', { name: 'Publish to app' }).click();
+  await expect(page.getByRole('alert')).toContainText('Remove the username and password');
+  await page.getByLabel('Station name').fill('SouthCity Live Test');
+  await page.getByLabel('Public stream URL').fill('http://127.0.0.1:9/stream');
+  await page.getByRole('button', { name: 'Publish to app' }).click();
+  await expect(page.locator('.form-success')).toContainText('Published');
+  if (page.viewportSize().width < 761)
+    await page.getByRole('button', { name: 'Toggle admin navigation' }).click();
+  await page.getByRole('button', { name: 'Back to listening' }).click();
+  await expect(page.locator('.player-track')).toContainText('SouthCity Live Test');
+  await page.getByRole('button', { name: 'Start listening', exact: true }).click();
+  await expect.poll(() => streamRequests.length).toBeGreaterThan(0);
+  expect(streamRequests[0]).toBe('http://127.0.0.1:9/stream');
 });

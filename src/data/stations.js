@@ -1,4 +1,20 @@
+import { liveStationDefaults } from './liveStream.js';
 export const stations = [
+  {
+    id: 'southcity-live',
+    ...liveStationDefaults,
+    tagline: 'On air now, straight from the studio.',
+    // Now-playing and listeners come from the live server; see src/data/liveStream.js.
+    track: null,
+    artist: null,
+    show: 'Live broadcast',
+    host: 'SouthCity Radio',
+    listeners: null,
+    color: '#1f2240',
+    art: 'live',
+    live: true,
+    stream: liveStationDefaults.streamUrl,
+  },
   {
     id: 'southcity',
     name: 'SouthCity Originals',
@@ -162,5 +178,7 @@ export function filterStations(
       [s.name, s.genre, s.track, s.artist, s.show, s.host].join(' ').toLowerCase().includes(term),
   );
 }
+export const liveStreamNote =
+  'Live audio, song titles, and listener counts come directly from the SouthCity broadcast server.';
 export const demoStreamNote =
   'Preview audio is provided by SomaFM. Station names, programming, and track metadata shown here are illustrative and do not describe the preview stream.';

@@ -23,7 +23,7 @@ test('genre and language filters combine with search', () => {
   assert.equal(filterStations(stations, '', 'Jazz', 'Instrumental').length, 0);
 });
 test('empty search returns catalog and unknown search returns empty without mutating it', () => {
-  assert.equal(filterStations(stations, '  ').length, 6);
+  assert.equal(filterStations(stations, '  ').length, 7);
   assert.equal(filterStations(stations, 'missing station').length, 0);
-  assert.equal(stations.length, 6);
+  assert.equal(stations.length, 7);
 });

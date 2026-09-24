@@ -2,7 +2,7 @@
 
 ## Current boundary
 
-There is **no backend connection** in this repository. Catalog data is in `src/data/stations.js`; audio uses external preview streams. Admin changes are local drafts, not Centova Cast mutations. Do not turn this prototype into a client that sends privileged Centova Cast credentials from the browser.
+There is **no backend connection** in this repository. Catalog data is in `src/data/stations.js`. The one exception to fixture data is **SouthCity Live**: it plays the station's public SHOUTcast stream and polls the public, read-only `/stats` and `/played` endpoints through a same-origin `/live-metadata` proxy. Its name, description, genre, language, and stream URL can be published from the admin through a local, same-machine-only endpoint (`server/liveStation.js`, `/api/live-station`, stored in `.local/live-station.json`). That endpoint is a development stand-in, not an authenticated admin API. The other stations use external preview streams. Admin changes are local drafts, not Centova Cast mutations. Do not turn this prototype into a client that sends privileged Centova Cast credentials from the browser.
 
 ## Target topology
 

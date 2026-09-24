@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useLiveStream } from './useLiveStream.js';
 const AudioContext = createContext(null);
 export const useAudio = () => useContext(AudioContext);
 export function AudioProvider({ children }) {
@@ -11,6 +12,8 @@ export function AudioProvider({ children }) {
     [status, setStatus] = useState('paused');
   const [volume, setVolume] = useState(0.7),
     [sleep, setSleep] = useState(0);
+  // Only a selected live station subscribes; metadata never touches audio.src.
+  const live = useLiveStream(Boolean(station?.live));
   function pause() {
     wantsPlayback.current = false;
     attempt.current += 1;
@@ -63,18 +66,22 @@ export function AudioProvider({ children }) {
   }, [volume]);
   useEffect(() => {
     if (!station || !('mediaSession' in navigator) || !('MediaMetadata' in window)) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: 'SouthCity preview stream',
-      artist: 'SomaFM',
-      album: station.name,
-    });
+    navigator.mediaSession.metadata = new MediaMetadata(
+      station.live
+        ? {
+            title: live.data?.title || station.name,
+            artist: live.data?.artist || 'SouthCity Radio',
+            album: station.name,
+          }
+        : { title: 'SouthCity preview stream', artist: 'SomaFM', album: station.name },
+    );
     navigator.mediaSession.setActionHandler('play', () => play(selected.current));
     navigator.mediaSession.setActionHandler('pause', pause);
     return () => {
       navigator.mediaSession.setActionHandler('play', null);
       navigator.mediaSession.setActionHandler('pause', null);
     };
-  }, [station]);
+  }, [station, live.data?.title, live.data?.artist]);
   useEffect(() => {
     if ('mediaSession' in navigator)
       navigator.mediaSession.playbackState = status === 'playing' ? 'playing' : 'paused';
@@ -84,7 +91,8 @@ export function AudioProvider({ children }) {
     if (!player || !next) return;
     const currentAttempt = ++attempt.current;
     wantsPlayback.current = true;
-    if (next.id !== selected.current?.id) {
+    // A republished stream address for the same station also needs a fresh source.
+    if (next.id !== selected.current?.id || next.stream !== selected.current?.stream) {
       player.pause();
       player.src = next.stream;
       selected.current = next;
