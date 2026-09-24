@@ -10,10 +10,24 @@ Requires Node.js 20.19+ or 22.12+ and npm.
 
 ```sh
 npm ci
-npm run dev
+npm run dev:app
 ```
 
-Open the URL printed by Vite. Production output:
+Consumer/mobile preview: **http://localhost:5180**.
+
+Start the admin dashboard in another terminal:
+
+```sh
+npm run dev:admin
+```
+
+Admin dashboard: **http://localhost:5181** (opens Dashboard directly).
+
+`npm run dev` is an alias for the consumer app. Both servers use strict ports: if a port is occupied, startup fails instead of silently moving to another port. Change both port assignments centrally in `src/data/workspaces.js`; server configuration, workspace navigation, and browser tests share those values. Ports 3000 and 5173 are not used.
+
+Workspace links navigate between these two development origins. Each origin has separate browser storage; crossing between them reloads the page and stops consumer audio. Ordinary navigation within the consumer app still preserves playback.
+
+Production output (preview uses port **4180**):
 
 ```sh
 npm run build
@@ -36,7 +50,7 @@ npm run preview
 | Admin             | Dashboard, station configuration drafts, monitoring, AutoDJ preference, playlist create/delete, local media selection, schedule drafts, DJs/users drafts, sample analytics and CSV export |
 | Design system     | Live palette previews, typography, shared cards and controls, audio states, skeletons, loading/error/empty states, dialog and splash specimens                                            |
 
-**Open admin:** Profile → Creator & admin portal, desktop sidebar, or `/#admin`.
+**Open admin:** http://localhost:5181 during development, or use Profile → Creator & admin portal / the desktop sidebar. The single production build also supports `/#admin`.
 
 **Open the design system:** Profile → Design system & component gallery.
 
@@ -113,7 +127,7 @@ npm run build           # production compilation
 npm run format:check    # formatting
 ```
 
-Browser tests use locally installed Google Chrome (`channel: 'chrome'`). Install Chrome before running them; on CI you can install it with `npx playwright install chrome`. Playwright starts Vite automatically. Test artifacts are ignored by Git. Tests cover discovery, persistence, station/show following, stream-error recovery, timer settings, theming, configuration drafts, playlists, schedules, analytics, and viewport overflow.
+Browser tests use locally installed Google Chrome (`channel: 'chrome'`). Install Chrome before running them; on CI you can install it with `npx playwright install chrome`. Playwright starts both Vite workspaces automatically. Test artifacts are ignored by Git. Tests cover discovery, persistence, station/show following, stream-error recovery, timer settings, theming, configuration drafts, playlists, schedules, analytics, and viewport overflow.
 
 ## Phase history
 

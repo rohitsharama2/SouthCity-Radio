@@ -56,6 +56,7 @@ import {
 import { AudioProvider, useAudio } from './components/AudioProvider.jsx';
 import { stations, genres, schedule, filterStations, demoStreamNote } from './data/stations.js';
 import Admin from './components/Admin.jsx';
+import { workspacePorts } from './data/workspaces.js';
 import { readLocal as readSaved, writeLocal, removeLocal } from './data/storage.js';
 import DesignSystem from './components/DesignSystem.jsx';
 const navigation = [
@@ -74,7 +75,7 @@ export default function App() {
 }
 function RadioApp() {
   const audio = useAudio();
-  const [page, setPage] = useState('Home'),
+  const [page, setPage] = useState(import.meta.env.MODE === 'admin' ? 'Admin' : 'Home'),
     [selected, setSelected] = useState(stations[0]),
     [query, setQuery] = useState(''),
     [genre, setGenre] = useState('All sounds'),
@@ -117,6 +118,7 @@ function RadioApp() {
     }
   }, [toast]);
   useEffect(() => {
+    if (import.meta.env.MODE === 'admin') return;
     const hash = window.location.hash.slice(1);
     if (hash.startsWith('station/')) {
       const s = stations.find((s) => s.id === hash.split('/')[1]);
@@ -128,7 +130,7 @@ function RadioApp() {
   }, []);
   useEffect(() => {
     const onKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if (page !== 'Admin' && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setPage('Discover');
         setTimeout(() => document.querySelector('.large-search input')?.focus(), 0);
@@ -136,8 +138,22 @@ function RadioApp() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [page]);
   const go = (name) => {
+    // Development workspaces have distinct origins and explicit entry screens.
+    if (import.meta.env.DEV) {
+      const targetPort = name === 'Admin' ? workspacePorts.admin : workspacePorts.app;
+      if (
+        Object.values(workspacePorts).includes(Number(location.port)) &&
+        Number(location.port) !== targetPort
+      ) {
+        const destination = new URL(location.href);
+        destination.port = String(targetPort);
+        destination.hash = '';
+        location.assign(destination.href);
+        return;
+      }
+    }
     setPage(name);
     setMobileMenu(false);
     window.scrollTo({ top: 0, behavior: 'instant' });

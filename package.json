@@ -4,13 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "npm run dev:app",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0",
+    "preview": "vite preview",
     "test": "node --test src/data/*.test.js",
     "test:e2e": "playwright test",
-    "format": "prettier --write src tests docs skills README.md AGENTS.md playwright.config.js package.json index.html",
-    "format:check": "prettier --check src tests docs skills README.md AGENTS.md playwright.config.js package.json index.html"
+    "format": "prettier --write src tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
+    "format:check": "prettier --check src tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
+    "dev:app": "vite",
+    "dev:admin": "vite --mode admin"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
