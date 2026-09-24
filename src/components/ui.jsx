@@ -1,18 +1,17 @@
 import React from 'react';
 import { Radio, Play, Heart, ArrowUpRight, X, Headphones, Music2 } from 'lucide-react';
 import { compactListeners, nowPlayingText } from '../data/liveStream.js';
-export function Brand({ compact = false }) {
+import logoBadge from '../assets/brand/southcity-logo.svg?raw';
+import logoLockup from '../assets/brand/southcity-lockup.svg?raw';
+import logoMark from '../assets/brand/southcity-mark.svg?raw';
+// Outlined SVG logos, inlined so --logo-ink/--logo-accent follow the active theme.
+const logos = { badge: logoBadge, lockup: logoLockup, mark: logoMark };
+export function Brand({ compact = false, variant = compact ? 'mark' : 'lockup' }) {
   return (
-    <div className="brand">
-      <span className="brand-icon">
-        <Radio size={23} />
-      </span>
-      {!compact && (
-        <span>
-          southcity<span className="brand-sub">RADIO, REIMAGINED.</span>
-        </span>
-      )}
-    </div>
+    <span
+      className={`brand brand-${variant}`}
+      dangerouslySetInnerHTML={{ __html: logos[variant] }}
+    />
   );
 }
 export function IconButton({ label, children, className = '', ...props }) {

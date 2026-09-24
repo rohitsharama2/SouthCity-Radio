@@ -129,29 +129,22 @@ input::placeholder {
   background: var(--surface-alt);
 }
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 25px;
-  font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -1.3px;
-  line-height: 1;
+  display: inline-flex;
+  line-height: 0;
 }
-.brand-icon {
-  color: var(--brand);
-  height: 39px;
-  width: 36px;
-  display: grid;
-  place-items: center;
-}
-.brand-sub {
+.brand svg {
   display: block;
-  font-family: var(--font-body);
-  font-size: 7px;
-  font-weight: 550;
-  letter-spacing: 2.1px;
-  margin-top: 7px;
+  height: 100%;
+  width: auto;
+}
+.brand-lockup {
+  height: 54px;
+}
+.brand-mark {
+  height: 38px;
+}
+.brand-badge {
+  height: 210px;
 }
 .brand-button {
   border: 0;
@@ -1345,16 +1338,7 @@ input::placeholder {
   color: var(--muted);
 }
 .page-footer .brand {
-  font-size: 18px;
-  color: var(--ink);
-  gap: 3px;
-}
-.page-footer .brand-sub {
-  font-size: 5px;
-  letter-spacing: 1.4px;
-}
-.page-footer .brand-icon {
-  width: 28px;
+  height: 40px;
 }
 .page-footer > span {
   font-size: 9px;
@@ -2274,8 +2258,7 @@ select {
   text-align: center;
 }
 .onboarding .brand {
-  justify-content: center;
-  margin: 15px 0 28px;
+  margin: 4px auto 20px;
 }
 .onboarding h2 {
   font-size: 30px;
@@ -2287,16 +2270,6 @@ select {
   color: var(--muted);
   margin: 16px auto;
   max-width: 340px;
-}
-.onboard-orbit {
-  background: repeating-radial-gradient(circle, transparent 0 18px, var(--line) 19px 20px);
-  border-radius: 50%;
-  width: 190px;
-  height: 190px;
-  display: grid;
-  place-items: center;
-  color: var(--brand);
-  margin: 25px auto;
 }
 .onboarding .button {
   margin: 12px 0 16px;
@@ -2332,7 +2305,8 @@ select {
   margin-top: 20px;
 }
 .info-modal .brand {
-  margin: 20px 0;
+  height: 170px;
+  margin: 12px 0 16px;
 }
 .error-state {
   background: var(--brand-soft);
@@ -2688,10 +2662,8 @@ select {
   .mobile-brand .icon-button {
     display: none;
   }
-  .mobile-brand .brand:after {
-    content: 'southcity';
-    font-size: 21px;
-    margin-left: -6px;
+  .mobile-brand .brand {
+    height: 42px;
   }
   .topbar-actions {
     width: auto;
@@ -3438,7 +3410,7 @@ select {
   background: var(--surface);
 }
 .splash-specimen > .brand {
-  justify-content: center;
+  height: 240px;
 }
 .splash-specimen h2 {
   font-size: 28px;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Play, Heart, Radio, Check, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Play, Heart, Check, Sun, Moon } from 'lucide-react';
 import {
   Brand,
   Button,
@@ -206,10 +206,7 @@ export default function DesignSystem({ onExit, theme, setTheme }) {
       <section className="design-section">
         <SectionHeading title="07 / Splash & welcome" />
         <div className="splash-specimen">
-          <Brand />
-          <div className="onboard-orbit">
-            <Radio size={58} />
-          </div>
+          <Brand variant="badge" />
           <h2>Find your frequency.</h2>
           <p>Your city. Your sound.</p>
         </div>

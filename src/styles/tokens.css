@@ -10,6 +10,8 @@
   --muted: #868780;
   --line: #e7e6df;
   --on-brand: #ffffff;
+  --logo-ink: #0f1b38;
+  --logo-accent: #a3303d;
   --success: #4f7961;
   --danger: #b84438;
   --sidebar-width: 224px;
@@ -38,5 +40,7 @@
   --muted: #a0a79a;
   --line: #353b31;
   --brand-soft: #483021;
+  --logo-ink: #f0f0e9;
+  --logo-accent: #f0747c;
   --success: #99c7a3;
 }

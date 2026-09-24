@@ -337,7 +337,7 @@ function RadioApp() {
             <IconButton label="Open navigation" onClick={() => setMobileMenu(!mobileMenu)}>
               <Menu size={22} />
             </IconButton>
-            <Brand compact />
+            <Brand />
           </div>
           <div className="breadcrumb">
             Your city. <span>Your sound.</span>
@@ -1490,7 +1490,7 @@ function RadioApp() {
           onClose={() => setModal(null)}
         >
           <div className="onboarding">
-            <Brand />
+            <Brand variant={onboardStep === 0 ? 'badge' : 'lockup'} />
             <h2>
               {onboardStep === 0 ? 'Find your frequency.' : 'A soundtrack that feels like you.'}
             </h2>
@@ -1499,11 +1499,7 @@ function RadioApp() {
                 ? 'A home for independent voices, unexpected discoveries, and really good music.'
                 : 'Choose a mood to start exploring. You can always find something new.'}
             </p>
-            {onboardStep === 0 ? (
-              <div className="onboard-orbit">
-                <Radio size={62} />
-              </div>
-            ) : (
+            {onboardStep === 1 && (
               <div className="chips">
                 {genres.slice(1).map((g) => (
                   <button
@@ -1549,7 +1545,7 @@ function RadioApp() {
           <div className="info-modal">
             {modal === 'about' ? (
               <>
-                <Brand />
+                <Brand variant="badge" />
                 <p>
                   SouthCity brings independent radio into your everyday. Human curation, local
                   voices, and a world of music.

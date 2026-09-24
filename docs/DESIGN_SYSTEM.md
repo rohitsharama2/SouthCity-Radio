@@ -15,6 +15,7 @@ SouthCity feels like an independent music publication with a live broadcast at i
 | Text     | `--ink`, `--muted`                                           | Primary and secondary hierarchy; verify contrast when retheming |
 | Borders  | `--line`                                                     | Dividers, fields, subtle card boundaries                        |
 | Feedback | `--success`, `--danger`                                      | Pair color with text or icons                                   |
+| Logo     | `--logo-ink`, `--logo-accent`                                | Navy/crimson Radio South City logo; lightened in dark mode      |
 | Shape    | `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-pill` | Fields, cards, editorial panels, chips/actions                  |
 | Type     | `--font-body`, `--font-display`                              | DM Sans and Manrope; change centrally and recheck wrapping      |
 | Rhythm   | `--space-1` through `--space-7`                              | Preferred spacing steps for new shared components               |
@@ -25,11 +26,15 @@ Dark mode overrides semantic surfaces and text under `[data-theme='dark']`. Neve
 
 Some layout spacing and specialized illustration geometry remain explicit CSS values. Changing the spacing tokens does not automatically rescale every existing layout. Brand color, surfaces, type families, shared radii, and common components are the principal centralized controls.
 
+## Logo
+
+The logo files in `src/assets/brand/` are vector redraws of the Radio South City badge with all text converted to outlines, so they need no web font. `southcity-logo.svg` is the full badge, `southcity-lockup.svg` the horizontal navigation lockup, and `southcity-mark.svg` the favicon/app icon. The badge and lockup read `--logo-ink` and `--logo-accent`; outside the app they fall back to navy `#0F1B38` and crimson `#A3303D`. `public/apple-touch-icon.png` and `public/brand/southcity-radio-logo.png` (a transparent 1080px badge for sharing) are raster exports. Re-export them when the SVGs change.
+
 ## Shared components
 
 `src/components/ui.jsx` exports:
 
-- `Brand`: product signature and compact mark.
+- `Brand`: Radio South City logo. `variant="lockup"` (default) for navigation and footers, `"badge"` for the full circular logo in welcome/about moments, `"mark"` (or `compact`) for the square app icon.
 - `Button`, `IconButton`: action variants, disabled behavior, accessible names.
 - `LiveBadge`: small, redundant text + color broadcast status.
 - `Artwork`: consistent ratio with distinct station-specific art direction.
