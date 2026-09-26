@@ -48,11 +48,46 @@ npm run preview
 | Admin             | Dashboard, station configuration drafts, monitoring, AutoDJ preference, playlist create/delete, local media selection, schedule drafts, DJs/users drafts, sample analytics and CSV export |
 | Design system     | Live palette previews, typography, shared cards and controls, audio states, skeletons, loading/error/empty states, dialog and splash specimens                                            |
 
-**Open admin:** http://localhost:5181 during development, or use Profile → Creator & admin portal / the desktop sidebar. The single production build also supports `/#admin`.
+**Open admin:** http://localhost:5181 during development. The single production build also supports `/#admin`. The listener app has no link to the admin, so staff open it directly.
 
 **Open the design system:** Profile → Design system & component gallery.
 
 **Try onboarding:** Profile → Welcome to SouthCity. It does not interrupt returning listeners.
+
+## Hosted server
+
+The listener apps need the SouthCity server for account settings, published SouthCity Live settings, and the song metadata proxy. `npm start` runs it for production ([`server/production.js`](server/production.js)): it serves the built web app (`npm run build`) and the same `/api` routes as the dev servers, on `PORT` (default 4180). It keeps nothing on disk when accounts are configured, so free hosts that sleep or restart lose nothing.
+
+**Deploy on Koyeb (free instance):**
+
+1. Sign in to [koyeb.com](https://www.koyeb.com) with GitHub and create a **Web Service** from this repository, branch `main`.
+2. Builder: **Buildpack**. The build runs `npm run build`; the run command is `npm start`. Exposed port: **8000**, HTTP, path `/`.
+3. Environment variables: `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (the same public values as `.env`). Never add a secret or service-role key.
+4. Instance: **Free**. After deploying, note the service address (`https://<name>.koyeb.app`).
+5. In Supabase, run the live station migration and add the redirect URLs listed under [Accounts](#set-it-up-free-plan).
+
+The free instance sleeps after an hour without traffic and wakes in a few seconds. Song metadata is fetched from the stream at most every 5 seconds and settings from Supabase at most every 10 seconds, however many listeners are polling. The hosted web app is HTTPS, so browsers there cannot play the plain-HTTP SouthCity Live stream until it has SSL (see [Live station](#live-station)); the Android app can.
+
+## Android beta build
+
+The listener app (no admin) can be packaged as an Android APK with [Capacitor](https://capacitorjs.com). The APK bundles the web app, plays through Android's WebView, and talks to the [hosted server](#hosted-server).
+
+Requires JDK 21 and the Android SDK (platform 36). With Homebrew: `brew install openjdk@21 android-commandlinetools`, then `sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"`. Point `JAVA_HOME` at JDK 21 and `ANDROID_HOME` at the SDK (or put `sdk.dir=...` in `android/local.properties`). Set `VITE_SOUTHCITY_SERVER` in `.env` to the hosted server's `https://` address; the build stops without it.
+
+```sh
+npm run android:apk
+```
+
+The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`. Share that file; testers allow "install unknown apps" for the app they open it from. Later builds from the same computer install as updates, because they are signed with that computer's debug key.
+
+What differs from the web app:
+
+- **No admin.** Admin links and `/#admin` are disabled in this build (`vite build --mode android`).
+- **Server by address.** API calls go to `VITE_SOUTHCITY_SERVER` through native HTTP (`CapacitorHttp`), which is not subject to CORS. Published SouthCity Live settings reach the app like the web app.
+- **Sign-in returns through a deep link.** Email links and Google sign-in redirect to `com.southcity.radio://auth`, which opens the app, and the app completes the sign-in. Google opens in the system browser, because Google refuses sign-in inside app WebViews. The link must be opened on the phone that requested it.
+- **Media notification.** While a station plays, a foreground media service shows a notification and lock-screen controls with play/pause and stop (`@capgo/capacitor-media-session`). Stop pauses and removes the notification. Song titles in it refresh only while the app is open, because metadata polling pauses in the background.
+
+The stream is plain `http://`, so the app is served from `http://localhost` and allows cleartext traffic. Switch both back once the stream has HTTPS.
 
 ## Accounts (Supabase)
 
@@ -75,6 +110,10 @@ Accounts are optional. Without them the app works exactly as a local preview: th
    ```
 
    Roles are `listener` (default), `dj`, `station_manager`, and `admin`. Roles can only be changed here, not from the app.
+
+6. Run [`supabase/migrations/20260926000000_live_station.sql`](supabase/migrations/20260926000000_live_station.sql). It stores SouthCity Live's published settings: anyone can read them, and only station managers and administrators can change them.
+7. For the [hosted server](#hosted-server) and the Android app, add these Redirect URLs: `https://<name>.koyeb.app/**` and `com.southcity.radio://auth`.
+8. Before real listeners sign up, connect an SMTP provider (below). The built-in sender allows only a few emails per hour.
 
 **Keys:** the project URL and publishable key are public by design. The app reads them at runtime from `/api/auth-config` and they are not built into the bundle. **Never** put the `service_role`/secret key in `.env`. The server refuses to start accounts with one, because that key would be sent to browsers.
 
@@ -102,6 +141,8 @@ src/
     ui.jsx                    Shared visual components and dialog behavior
     AudioProvider.jsx         Persistent HTMLAudioElement + Media Session
     useAccount.js             Supabase session, profile, and follows (optional accounts)
+    mediaSession.js           System media controls (native notification in the Android app)
+    server.js                 SouthCity server address (by path, or hosted for Android)
     SignIn.jsx                One-time email link sign-in shared by app and admin
     Admin.jsx                 Separate operations workspace
     DesignSystem.jsx          Interactive component and state gallery
@@ -114,9 +155,11 @@ src/
     app.css                   Consumer and shared component styling
     admin.css                 Operations-specific layout and styling
 server/
+  production.js               Hosted server: built app plus the routes below (npm start)
   liveStation.js              Live station publishing and metadata proxy
   accounts.js                 Account config endpoint and staff checks for publishing
-supabase/migrations/          Database tables and row-level security for accounts
+supabase/migrations/          Tables and row-level security for accounts and live station settings
+android/                      Capacitor Android project for the listener app
 ```
 
 The audio provider wraps both workspaces. Navigation does not recreate the audio element. Local preferences and drafts use namespaced `localStorage` keys; selected media files are kept only as metadata in memory. Accounts are optional and use Supabase ([`src/components/useAccount.js`](src/components/useAccount.js), [`server/accounts.js`](server/accounts.js), rules in [`src/data/accounts.js`](src/data/accounts.js)). Supabase keeps the session in `localStorage` under `sc-auth`.
@@ -127,15 +170,15 @@ The audio provider wraps both workspaces. Navigation does not recreate the audio
 - **The other six stations are samples.** Their audio is real but their identity and metadata are not: preview streams are publicly accessible SomaFM streams. The app labels this in the player; displayed track/show metadata is illustrative and does not identify the audio actually playing.
 - Playing, paused, connecting, buffering, network error, offline, and unavailable states are represented. Network and playback events drive the player; every state can also be inspected in the design gallery.
 - Listen history records selected stations, not verified completed listening sessions.
-- Browser playback can continue while navigating and supports compatible system media controls. **Reliable native background playback, interruptions, lock-screen artwork, Bluetooth routing, and Android foreground services require native integration and device testing.**
+- Browser playback can continue while navigating and supports compatible system media controls. The Android app adds a foreground media service with notification and lock-screen controls. **Interruptions (calls, other audio), lock-screen artwork, Bluetooth routing, and iOS still need native work and device testing.**
 - Favorites, profile, shows, and theme survive browser refresh. With accounts configured, favorites, followed shows, and display name sync across browsers when the listener signs in or reloads (there is no live push between open tabs). Account deletion from the app, push notifications, downloads, recorded episodes, and entitlement enforcement are not implemented.
 - Photos load from Unsplash, avatars from Pravatar, and fonts from Google Fonts. Replace remote samples with owned/approved, self-hosted assets before release.
 
 ## Live station
 
-**Edit it from the admin:** Stations → SouthCity Live → **Configuration**. Change the name, description, genre, language, or public stream URL, then press **Publish to app**. The customer app picks the change up within 15 seconds; listeners hear a new stream address the next time they press play.
+**Edit it from the admin:** Stations → SouthCity Live → **Configuration**. Change the name, description, genre, language, or public stream URL, then press **Publish to app**. Listener apps pick the change up within about 25 seconds; listeners hear a new stream address the next time they press play.
 
-- Publishing goes through the local SouthCity server built into `npm run dev:app`, `npm run dev:admin`, and `npm run preview` ([`server/liveStation.js`](server/liveStation.js)). It saves to `.local/live-station.json` (not committed). Delete that file to return to the defaults in [`src/data/liveStream.js`](src/data/liveStream.js).
+- Publishing goes through the SouthCity server: built into `npm run dev:app`, `npm run dev:admin`, and `npm run preview`, and hosted with `npm start` ([`server/liveStation.js`](server/liveStation.js)). With accounts, it saves to the Supabase `live_station` table with the publisher's own session, so row-level security applies; delete that row to return to the defaults in [`src/data/liveStream.js`](src/data/liveStream.js). Without accounts, it saves to `.local/live-station.json` (not committed).
 - Before saving, the server test-connects to the stream. If it can't connect, the admin says why and offers **Publish anyway** (for example, to save an HTTPS address before SSL is switched on).
 - Stream URLs must be public listener addresses. URLs containing a username or password are rejected.
 - With [accounts](#accounts-supabase) configured, publishing requires a signed-in station manager or administrator; the server verifies the session with Supabase and reads the role from the database. Without accounts, writes are accepted only from the same computer. A static host without the SouthCity server has neither accounts nor publishing: it keeps the defaults and the admin reports that publishing is unavailable.

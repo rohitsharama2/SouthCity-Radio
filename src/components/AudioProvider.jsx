@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useLiveStream } from './useLiveStream.js';
+import { setMediaActionHandler, setMediaMetadata, setMediaPlaybackState } from './mediaSession.js';
 const AudioContext = createContext(null);
 export const useAudio = () => useContext(AudioContext);
 export function AudioProvider({ children }) {
@@ -9,7 +10,9 @@ export function AudioProvider({ children }) {
   const attempt = useRef(0),
     wantsPlayback = useRef(false);
   const [station, setStation] = useState(null),
-    [status, setStatus] = useState('paused');
+    [status, setStatus] = useState('paused'),
+    // System media controls show from the first play until the listener stops from them.
+    [session, setSession] = useState(false);
   const [volume, setVolume] = useState(0.7),
     [sleep, setSleep] = useState(0);
   // Only a selected live station subscribes; metadata never touches audio.src.
@@ -19,6 +22,10 @@ export function AudioProvider({ children }) {
     attempt.current += 1;
     audio.current?.pause();
     setStatus('paused');
+  }
+  function stop() {
+    pause();
+    setSession(false);
   }
   useEffect(() => {
     const element = new Audio();
@@ -65,8 +72,8 @@ export function AudioProvider({ children }) {
     if (audio.current) audio.current.volume = volume;
   }, [volume]);
   useEffect(() => {
-    if (!station || !('mediaSession' in navigator) || !('MediaMetadata' in window)) return;
-    navigator.mediaSession.metadata = new MediaMetadata(
+    if (!station) return;
+    setMediaMetadata(
       station.live
         ? {
             title: live.data?.title || station.name,
@@ -75,22 +82,22 @@ export function AudioProvider({ children }) {
           }
         : { title: 'SouthCity preview stream', artist: 'SomaFM', album: station.name },
     );
-    navigator.mediaSession.setActionHandler('play', () => play(selected.current));
-    navigator.mediaSession.setActionHandler('pause', pause);
-    return () => {
-      navigator.mediaSession.setActionHandler('play', null);
-      navigator.mediaSession.setActionHandler('pause', null);
-    };
   }, [station, live.data?.title, live.data?.artist]);
   useEffect(() => {
-    if ('mediaSession' in navigator)
-      navigator.mediaSession.playbackState = status === 'playing' ? 'playing' : 'paused';
-  }, [status]);
+    if (!station) return;
+    const handlers = { play: () => play(selected.current), pause, stop };
+    Object.entries(handlers).forEach(([action, fn]) => setMediaActionHandler(action, fn));
+    return () => Object.keys(handlers).forEach((action) => setMediaActionHandler(action, null));
+  }, [station]);
+  useEffect(() => {
+    setMediaPlaybackState(session ? (status === 'playing' ? 'playing' : 'paused') : 'none');
+  }, [session, status]);
   async function play(next) {
     const player = audio.current;
     if (!player || !next) return;
     const currentAttempt = ++attempt.current;
     wantsPlayback.current = true;
+    setSession(true);
     // A republished stream address for the same station also needs a fresh source.
     if (next.id !== selected.current?.id || next.stream !== selected.current?.stream) {
       player.pause();

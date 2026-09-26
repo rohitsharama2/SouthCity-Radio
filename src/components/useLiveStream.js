@@ -7,6 +7,7 @@ import {
   validateLiveStation,
 } from '../data/liveStream.js';
 import { accessToken } from './useAccount.js';
+import { serverUrl } from './server.js';
 
 // One shared poller for the live station. Every consumer reads the same snapshot, polling
 // runs only while something is subscribed, and last-known metadata survives failed polls.
@@ -27,7 +28,7 @@ async function getJson(url, signal) {
 // A static host without the SouthCity server has no config endpoint; keep the defaults.
 async function getConfig(signal) {
   try {
-    const body = await getJson(liveEndpoints.config, signal);
+    const body = await getJson(serverUrl(liveEndpoints.config), signal);
     const { value } = validateLiveStation(body);
     return value ? { ...value, updatedAt: body.updatedAt ?? null } : snapshot.config;
   } catch {
@@ -45,8 +46,8 @@ async function poll() {
     if (controller === inflight && JSON.stringify(config) !== JSON.stringify(snapshot.config))
       emit({ config });
     const [stats, played] = await Promise.all([
-      getJson(liveEndpoints.stats, controller.signal),
-      getJson(liveEndpoints.history, controller.signal).catch(() => null),
+      getJson(serverUrl(liveEndpoints.stats), controller.signal),
+      getJson(serverUrl(liveEndpoints.history), controller.signal).catch(() => null),
     ]);
     emit({
       phase: 'ready',
@@ -93,7 +94,7 @@ export async function publishLiveStation(values, { force = false } = {}) {
   // With accounts configured the server checks this session's role before saving.
   const token = await accessToken();
   try {
-    response = await fetch(liveEndpoints.config, {
+    response = await fetch(serverUrl(liveEndpoints.config), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

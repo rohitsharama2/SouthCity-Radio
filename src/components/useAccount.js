@@ -5,6 +5,7 @@ import {
   libraryFromRows,
   parseAccountConfig,
 } from '../data/accounts.js';
+import { androidApp, serverUrl } from './server.js';
 
 // One shared Supabase session for the app and admin. Phases: loading → unavailable (this
 // server has no accounts configured) | signed-out | signed-in. The Supabase client is only
@@ -61,6 +62,10 @@ function applySession(session) {
 // Once Supabase has read a returning sign-in link, remove its parameters from the address bar
 // and keep any failure (usually an expired or already-used link) to show the listener.
 const redirectParams = ['code', 'error', 'error_code', 'error_description'];
+const linkErrorMessage = (description) =>
+  /expired|invalid/i.test(description)
+    ? 'That sign-in link has expired or was already used. Request a new one.'
+    : description;
 function consumeRedirect() {
   const url = new URL(window.location.href);
   const hash = new URLSearchParams(url.hash.slice(1));
@@ -69,18 +74,39 @@ function consumeRedirect() {
   redirectParams.forEach((key) => url.searchParams.delete(key));
   if (redirectParams.some((key) => hash.has(key))) url.hash = '';
   history.replaceState(history.state, '', url.href);
-  if (description)
-    emit({
-      linkError: /expired|invalid/i.test(description)
-        ? 'That sign-in link has expired or was already used. Request a new one.'
-        : description,
-    });
+  if (description) emit({ linkError: linkErrorMessage(description) });
+}
+// The Android app has no web address, so sign-in links and Google return to it through this
+// deep link (see AndroidManifest.xml). Its PKCE verifier is in the app's own storage, so the
+// app finishes the sign-in itself.
+export const appAuthRedirect = 'com.southcity.radio://auth';
+async function listenForAppLinks() {
+  const [{ App }, { Browser }] = await Promise.all([
+    import('@capacitor/app'),
+    import('@capacitor/browser'),
+  ]);
+  const handled = new Set();
+  const open = async (url) => {
+    if (!url?.startsWith(appAuthRedirect) || handled.has(url)) return;
+    handled.add(url);
+    Browser.close().catch(() => {});
+    const link = new URL(url);
+    const hash = new URLSearchParams(link.hash.slice(1));
+    const read = (key) => link.searchParams.get(key) || hash.get(key);
+    if (read('error_description'))
+      return emit({ linkError: linkErrorMessage(read('error_description')) });
+    if (!read('code')) return;
+    const { error } = await client.auth.exchangeCodeForSession(read('code'));
+    if (error) emit({ linkError: linkErrorMessage(error.message) });
+  };
+  App.addListener('appUrlOpen', ({ url }) => open(url));
+  open((await App.getLaunchUrl())?.url);
 }
 async function start() {
   emit({ phase: 'loading' });
   let config = null;
   try {
-    const response = await fetch(accountEndpoints.config, { cache: 'no-store' });
+    const response = await fetch(serverUrl(accountEndpoints.config), { cache: 'no-store' });
     if (response.ok) config = parseAccountConfig(await response.json());
   } catch {
     // A static host without the SouthCity server has no accounts.
@@ -97,7 +123,8 @@ async function start() {
   // Supabase advises against awaiting its own calls inside this callback.
   client.auth.onAuthStateChange((_event, session) => setTimeout(() => applySession(session)));
   await client.auth.getSession();
-  consumeRedirect();
+  if (androidApp) listenForAppLinks().catch(() => {});
+  else consumeRedirect();
   fetch(`${config.url}/auth/v1/settings`, { headers: { apikey: config.key } })
     .then((r) => (r.ok ? r.json() : null))
     .then((settings) => emit({ google: settings?.external?.google === true }))
@@ -116,7 +143,8 @@ const signedInUser = () => {
   if (!client || !snapshot.user) throw new Error('Sign in first.');
   return snapshot.user;
 };
-const workspaceUrl = (workspace) => authRedirectUrl(window.location, workspace);
+const workspaceUrl = (workspace) =>
+  androidApp ? appAuthRedirect : authRedirectUrl(window.location, workspace);
 
 export async function signInWithEmail(email, { workspace } = {}) {
   if (!client) throw new Error('Accounts aren’t available on this server.');
@@ -128,11 +156,16 @@ export async function signInWithEmail(email, { workspace } = {}) {
 }
 export async function signInWithGoogle({ workspace } = {}) {
   if (!client) throw new Error('Accounts aren’t available on this server.');
-  const { error } = await client.auth.signInWithOAuth({
+  // Google refuses sign-in inside app WebViews, so the Android app uses the system browser.
+  const { data, error } = await client.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: workspaceUrl(workspace) },
+    options: { redirectTo: workspaceUrl(workspace), skipBrowserRedirect: androidApp },
   });
   if (error) throw failure(error, 'Google sign-in couldn’t start.');
+  if (androidApp) {
+    const { Browser } = await import('@capacitor/browser');
+    await Browser.open({ url: data.url });
+  }
 }
 // Ends the session on this device only; other devices stay signed in.
 export async function signOut() {

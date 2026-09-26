@@ -1,0 +1,16 @@
+{
+  "appId": "com.southcity.radio",
+  "appName": "SouthCity Radio",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http"
+  },
+  "android": {
+    "backgroundColor": "#0F1B38"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

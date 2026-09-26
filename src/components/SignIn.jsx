@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle, LoaderCircle, Mail } from 'lucide-react';
 import { Button } from './ui.jsx';
 import { useAccount, signInWithEmail, signInWithGoogle } from './useAccount.js';
+import { androidApp } from './server.js';
 import { validateEmail } from '../data/accounts.js';
 
 // Passwordless sign-in: Supabase emails a one-time link that returns to this workspace.
@@ -25,8 +26,11 @@ export function SignInForm({ workspace, submitLabel = 'Email me a sign-in link' 
         <div>
           <strong>Check your inbox</strong>
           <p>
-            We sent a sign-in link to <b>{state.email}</b>. Open it in this browser to finish
-            signing in. The link works once.
+            We sent a sign-in link to <b>{state.email}</b>.{' '}
+            {androidApp
+              ? 'Open it on this phone to return to the app signed in.'
+              : 'Open it in this browser to finish signing in.'}{' '}
+            The link works once.
           </p>
           <button type="button" className="text-button" onClick={() => setState({ phase: 'idle' })}>
             Use a different email
