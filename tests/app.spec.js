@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { liveServer } from '../src/data/liveStream.js';
+import { workspacePorts } from '../src/data/workspaces.js';
 import { mockSouthCityServer, navigate } from './helpers.js';
+// The admin has its own origin and no link from the listener app.
+const adminUrl = `http://127.0.0.1:${workspacePorts.admin}/`;
 test.beforeEach(async ({ page }) => {
   await mockSouthCityServer(page);
   await page.goto('/');
@@ -79,8 +82,7 @@ test('live station shows server metadata and switching keeps the queue order', a
   await expect(page.locator('.player-track')).toContainText('SouthCity Originals');
 });
 test('admin shows live stream telemetry and embed code', async ({ page }) => {
-  await navigate(page, 'Profile');
-  await page.getByRole('button', { name: 'Creator & admin portal', exact: true }).last().click();
+  await page.goto(adminUrl);
   const adminNav = async (name) => {
     if (page.viewportSize().width < 761)
       await page.getByRole('button', { name: 'Toggle admin navigation' }).click();
@@ -103,6 +105,8 @@ test('admin shows live stream telemetry and embed code', async ({ page }) => {
 });
 test('theme and profile persist, component gallery reuses the design system', async ({ page }) => {
   await navigate(page, 'Profile');
+  // Listeners never see a way into the admin workspace.
+  await expect(page.getByRole('button', { name: /admin/i })).toHaveCount(0);
   await page.getByLabel('Appearance', { exact: true }).selectOption('dark');
   await page.getByRole('button', { name: 'Edit profile' }).click();
   await page.getByLabel('First name').fill('Rohit');
@@ -123,8 +127,7 @@ test('theme and profile persist, component gallery reuses the design system', as
 test('admin configuration, playlists, schedule, and analytics are interactive', async ({
   page,
 }) => {
-  await navigate(page, 'Profile');
-  await page.getByRole('button', { name: 'Creator & admin portal', exact: true }).last().click();
+  await page.goto(adminUrl);
   const adminNav = async (name) => {
     if (page.viewportSize().width < 761)
       await page.getByRole('button', { name: 'Toggle admin navigation' }).click();
@@ -199,7 +202,7 @@ test('admin and dark layouts render without document overflow', async ({ page },
     fullPage: true,
   });
   await page.getByLabel('Appearance', { exact: true }).selectOption('light');
-  await page.getByRole('button', { name: 'Creator & admin portal', exact: true }).last().click();
+  await page.goto(adminUrl);
   await page.screenshot({
     path: `test-results/admin-${testInfo.project.name}.png`,
     fullPage: true,
@@ -227,8 +230,7 @@ test('admin publishes live station changes to the consumer app', async ({ page }
     streamRequests.push(route.request().url());
     return route.abort('failed');
   });
-  await navigate(page, 'Profile');
-  await page.getByRole('button', { name: 'Creator & admin portal', exact: true }).last().click();
+  await page.goto(adminUrl);
   if (page.viewportSize().width < 761)
     await page.getByRole('button', { name: 'Toggle admin navigation' }).click();
   await page

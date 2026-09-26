@@ -25,7 +25,6 @@ import {
   Check,
   Sun,
   Moon,
-  Settings,
   LogOut,
   BarChart3,
   Menu,
@@ -206,10 +205,12 @@ function RadioApp() {
   }, [toast]);
   useEffect(() => {
     if (import.meta.env.MODE === 'admin') return;
+    // The Android listener app has no admin workspace; admin links there fall back to Home.
+    const adminRoute = import.meta.env.MODE !== 'android';
     const hash = window.location.hash.slice(1);
     // Admin sign-in links return with ?workspace=admin (see authRedirectUrl).
     const url = new URL(window.location.href);
-    if (url.searchParams.get('workspace') === 'admin') {
+    if (adminRoute && url.searchParams.get('workspace') === 'admin') {
       url.searchParams.delete('workspace');
       url.hash = 'admin';
       history.replaceState(history.state, '', url.href);
@@ -220,7 +221,7 @@ function RadioApp() {
         setSelected(s);
         setPage('Station');
       }
-    } else if (hash === 'admin') setPage('Admin');
+    } else if (adminRoute && hash === 'admin') setPage('Admin');
   }, []);
   useEffect(() => {
     const onKey = (e) => {
@@ -443,9 +444,6 @@ function RadioApp() {
               Find your frequency <ArrowUpRight size={14} />
             </button>
           </div>
-          <button className="admin-link" onClick={() => go('Admin')}>
-            <Settings size={15} /> Creator & admin portal <ArrowUpRight size={13} />
-          </button>
           <button className="sidebar-user" onClick={() => go('Profile')}>
             <span className="avatar">{firstName.slice(0, 1)}</span>
             <span>
@@ -1297,12 +1295,6 @@ function RadioApp() {
                     <Radio size={19} /> Welcome to SouthCity
                   </span>
                   <ChevronRight size={18} />
-                </button>
-                <button className="setting-button" onClick={() => go('Admin')}>
-                  <span>
-                    <Settings size={19} /> Creator & admin portal
-                  </span>
-                  <ArrowUpRight size={18} />
                 </button>
               </div>
             </>
