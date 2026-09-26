@@ -52,8 +52,8 @@ export function createAccounts(env = {}, { fetch: request = fetch } = {}) {
     },
   };
 }
-export function accountsServer(accounts) {
-  const handle = (req, res, next) => {
+export function accountsMiddleware(accounts) {
+  return (req, res, next) => {
     if (new URL(req.url, 'http://localhost').pathname !== accountEndpoints.config) return next();
     res.statusCode = req.method === 'GET' ? 200 : 405;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -64,6 +64,9 @@ export function accountsServer(accounts) {
       ),
     );
   };
+}
+export function accountsServer(accounts) {
+  const handle = accountsMiddleware(accounts);
   return {
     name: 'southcity-accounts',
     configureServer(server) {
