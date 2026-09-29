@@ -1,6 +1,6 @@
 {
   "appId": "com.southcity.radio",
-  "appName": "SouthCity Radio",
+  "appName": "Radio South City",
   "webDir": "dist",
   "server": {
     "androidScheme": "http"

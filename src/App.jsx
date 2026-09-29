@@ -339,7 +339,7 @@ function RadioApp() {
       if (navigator.share)
         await navigator.share({
           title: station.name,
-          text: 'Find your frequency on SouthCity Radio',
+          text: 'Find your frequency on Radio South City',
           url,
         });
       else {
@@ -367,7 +367,7 @@ function RadioApp() {
       <aside className={`sidebar ${mobileMenu ? 'open' : ''}`}>
         <button
           className="brand-button"
-          aria-label="SouthCity Radio home"
+          aria-label="Radio South City home"
           onClick={() => go('Home')}
         >
           <Brand />
@@ -1303,7 +1303,7 @@ function RadioApp() {
             <Brand />
             <span>Independent voices. A shared frequency.</span>
             <small>
-              © {new Date().getFullYear()} SouthCity Radio <span>·</span> Interactive preview
+              © {new Date().getFullYear()} Radio South City <span>·</span> Interactive preview
             </small>
           </footer>
         </main>

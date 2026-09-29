@@ -77,7 +77,7 @@ export function AudioProvider({ children }) {
       station.live
         ? {
             title: live.data?.title || station.name,
-            artist: live.data?.artist || 'SouthCity Radio',
+            artist: live.data?.artist || 'Radio South City',
             album: station.name,
           }
         : { title: 'SouthCity preview stream', artist: 'SomaFM', album: station.name },

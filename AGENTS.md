@@ -1,4 +1,4 @@
-# Working on SouthCity Radio
+# Working on Radio South City
 
 This is a responsive React/Vite web prototype with separate consumer and admin experiences. Read README.md for current capability boundaries. Keep fixture content and local drafts honest; do not imply a Centova Cast connection, native background support, account protection beyond what the Supabase setup provides, or successful remote mutation that does not exist.
 

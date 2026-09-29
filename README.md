@@ -1,4 +1,4 @@
-# SouthCity Radio
+# Radio South City
 
 **Your city. Your sound.** A premium, responsive radio product with an independent consumer identity and a separate broadcast operations workspace.
 

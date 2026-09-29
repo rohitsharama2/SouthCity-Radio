@@ -8,7 +8,7 @@ export const stations = [
     track: null,
     artist: null,
     show: 'Live broadcast',
-    host: 'SouthCity Radio',
+    host: 'Radio South City',
     listeners: null,
     color: '#1f2240',
     art: 'live',
