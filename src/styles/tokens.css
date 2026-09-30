@@ -12,6 +12,9 @@
   --on-brand: #ffffff;
   --logo-ink: #0f1b38;
   --logo-accent: #a3303d;
+  --hero-surface: #fae9de;
+  --hero-ink: #242622;
+  --hero-muted: #6f6a62;
   --success: #4f7961;
   --danger: #b84438;
   --sidebar-width: 224px;
@@ -42,5 +45,8 @@
   --brand-soft: #483021;
   --logo-ink: #f0f0e9;
   --logo-accent: #f0747c;
+  --hero-surface: #24251f;
+  --hero-ink: #ffffff;
+  --hero-muted: #c4c6bd;
   --success: #99c7a3;
 }

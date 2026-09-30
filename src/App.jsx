@@ -71,6 +71,8 @@ import {
   withLiveMetadata,
 } from './data/liveStream.js';
 import Admin from './components/Admin.jsx';
+import Advertisements from './components/Advertisements.jsx';
+import AnnouncementTicker from './components/AnnouncementTicker.jsx';
 import { workspacePorts } from './data/workspaces.js';
 import { readLocal as readSaved, writeLocal, removeLocal } from './data/storage.js';
 import DesignSystem from './components/DesignSystem.jsx';
@@ -364,7 +366,7 @@ function RadioApp() {
   if (page === 'Admin')
     return <Admin onExit={() => go('Home')} theme={theme} setTheme={setTheme} />;
   return (
-    <div className="app-shell">
+    <div className={`app-shell navigation-hidden ${page === 'Home' ? 'home-listening' : ''}`}>
       <aside className={`sidebar ${mobileMenu ? 'open' : ''}`}>
         <button
           className="brand-button"
@@ -461,7 +463,13 @@ function RadioApp() {
             <IconButton label="Open navigation" onClick={() => setMobileMenu(!mobileMenu)}>
               <Menu size={22} />
             </IconButton>
-            <Brand />
+            <button
+              className="brand-button"
+              aria-label="Radio South City home"
+              onClick={() => go('Home')}
+            >
+              <Brand />
+            </button>
           </div>
           <div className="breadcrumb">
             Your city. <span>Your sound.</span>
@@ -518,22 +526,19 @@ function RadioApp() {
                   <span className="status-dot" /> Broadcasting good energy
                 </span>
               </div>
-              <div className="hero-grid">
+              <AnnouncementTicker />
+              <div className="hero-grid hero-grid-listening">
                 <section className="hero">
-                  <img
-                    className="hero-photo"
-                    src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1400&q=85"
-                    alt="DJ performing a live set in warm evening light"
-                  />
-                  <div className="hero-shade" />
+                  <div className="hero-watermark" aria-hidden="true">
+                    <Brand variant="badge" />
+                  </div>
                   <div className="hero-content">
                     <div className="hero-eyebrow">
                       <LiveBadge /> <span>RIGHT HERE. RIGHT NOW.</span>
                     </div>
                     <h2>
-                      Your city.
-                      <br />
-                      Your soundtrack.
+                      Your city. <br />
+                      Your sound.
                     </h2>
                     <p>
                       Real people. Handpicked music.
@@ -548,14 +553,8 @@ function RadioApp() {
                       </button>
                     </div>
                     <div className="hero-listeners">
-                      <div className="avatar-stack">
-                        <img src="https://i.pravatar.cc/60?img=47" alt="" />
-                        <img src="https://i.pravatar.cc/60?img=12" alt="" />
-                        <img src="https://i.pravatar.cc/60?img=49" alt="" />
-                      </div>
-                      <span>
-                        <strong>2.4k+</strong> people finding their frequency
-                      </span>
+                      <Headphones size={14} aria-hidden="true" />
+                      <span>Independent radio. Wherever you are.</span>
                     </div>
                   </div>
                   <div className="hero-caption">
@@ -568,180 +567,8 @@ function RadioApp() {
                     SOUTH CITY. WORLDWIDE.
                   </div>
                 </section>
-                <section className="feature-show">
-                  <div className="feature-show-top">
-                    <span>IN THE SPOTLIGHT</span>
-                    <ArrowUpRight size={20} />
-                  </div>
-                  <div className="sun-art">
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </div>
-                  <div className="feature-show-content">
-                    <span className="feature-tag">WEEKDAYS · 4–7 PM</span>
-                    <h2>
-                      The Golden
-                      <br />
-                      Hour<span>↗</span>
-                    </h2>
-                    <p>
-                      A little soul for your afternoon.
-                      <br />
-                      With Ananya Rao.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setSelected(stations.find((s) => s.id === 'southcity'));
-                        go('Show');
-                      }}
-                    >
-                      Meet your next favorite show <ArrowRight size={17} />
-                    </button>
-                  </div>
-                </section>
               </div>
-              <section className="content-section continue-section">
-                <SectionHeading
-                  title="Pick up where you left off"
-                  subtitle="Good sounds deserve another listen."
-                  action="Your history"
-                  onAction={() => {
-                    setLibraryTab('Recently played');
-                    go('Library');
-                  }}
-                />
-                <div className="continue-grid">
-                  {(history.length
-                    ? history
-                        .slice(0, 3)
-                        .map((id) => stations.find((s) => s.id === id))
-                        .filter(Boolean)
-                    : [stations[1], stations[2], stations[3]]
-                  ).map((s, i) => (
-                    <article className="continue-card" key={s.id}>
-                      <button
-                        className="continue-art"
-                        aria-label={`View ${s.name}`}
-                        onClick={() => openStation(s)}
-                      >
-                        <Artwork station={s} />
-                      </button>
-                      <button className="continue-info" onClick={() => openStation(s)}>
-                        <strong>{s.name}</strong>
-                        <span>{i === 0 ? 'Easy on the ears, good for the soul' : s.tagline}</span>
-                      </button>
-                      <IconButton label={`Play ${s.name}`} onClick={() => play(s)}>
-                        <Play size={17} fill="currentColor" />
-                      </IconButton>
-                    </article>
-                  ))}
-                </div>
-              </section>
-              <section className="content-section">
-                <SectionHeading
-                  title={
-                    <>
-                      <span className="live-title-dot" /> Live, and worth a listen
-                    </>
-                  }
-                  subtitle="Human-curated. Always on. Never on repeat."
-                  action="Explore live radio"
-                  onAction={() => go('Live')}
-                />
-                <div className="station-grid">{stations.slice(0, 4).map(card)}</div>
-              </section>
-              <section className="content-section genre-section">
-                <SectionHeading
-                  title="A sound for every side of you"
-                  subtitle="Follow your mood. We'll find the frequency."
-                  onAction={() => go('Discover')}
-                />
-                <div className="genre-grid">
-                  {[
-                    { name: 'Indie', label: 'A different kind of familiar', symbol: '✳' },
-                    { name: 'Jazz', label: 'Let the day slow down', symbol: '♬' },
-                    { name: 'Chill', label: 'A little room to breathe', symbol: '≈' },
-                    { name: 'Electronic', label: 'Find your next dimension', symbol: '◎' },
-                  ].map((g, i) => (
-                    <button
-                      className={`genre-card genre-${i}`}
-                      key={g.name}
-                      onClick={() => {
-                        setGenre(g.name);
-                        go('Discover');
-                      }}
-                    >
-                      <span>
-                        <strong>{g.name}</strong>
-                        <small>{g.label}</small>
-                      </span>
-                      <b>{g.symbol}</b>
-                      <ArrowUpRight size={16} />
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <section className="content-section">
-                <SectionHeading
-                  eyebrow="HANDPICKED FOR YOUR HEADPHONES"
-                  title="Your next favorite is here"
-                  subtitle="A few stations we think you'll feel at home with."
-                  onAction={() => go('Discover')}
-                />
-                <div className="station-grid">
-                  {[stations[4], stations[5], stations[1], stations[2]].map(card)}
-                </div>
-              </section>
-              <div className="editorial-banner">
-                <Radio size={30} />
-                <div>
-                  <h3>Less algorithm. More soul.</h3>
-                  <p>Made by people who love music as much as you do.</p>
-                </div>
-                <Button variant="secondary" onClick={() => setModal('about')}>
-                  Meet SouthCity <ArrowUpRight size={15} />
-                </Button>
-              </div>
-              <section className="content-section">
-                <SectionHeading
-                  title="Popular around the city"
-                  subtitle="The frequencies everyone's tuning into."
-                  onAction={() => go('Live')}
-                />
-                <div className="popular-list">
-                  {stations
-                    .map(withLive)
-                    .sort((a, b) => (b.listeners ?? -1) - (a.listeners ?? -1))
-                    .slice(0, 4)
-                    .map((s, i) => (
-                      <div className="popular-row" key={s.id}>
-                        <span className="rank">0{i + 1}</span>
-                        <button
-                          className="mini-art"
-                          onClick={() => openStation(s)}
-                          aria-label={`View ${s.name}`}
-                        >
-                          <Artwork station={s} />
-                        </button>
-                        <button className="row-title" onClick={() => openStation(s)}>
-                          <strong>{s.name}</strong>
-                          <small>{nowPlayingText(s)}</small>
-                        </button>
-                        <span className="genre-label">{s.genre}</span>
-                        <span className="row-listeners">
-                          <Headphones size={14} />
-                          {formatListeners(s.listeners)}
-                        </span>
-                        <IconButton label={`Play ${s.name}`} onClick={() => play(s)}>
-                          <Play size={17} />
-                        </IconButton>
-                      </div>
-                    ))}
-                </div>
-              </section>
+              <Advertisements />
             </>
           )}
           {(page === 'Discover' || page === 'Live') && (

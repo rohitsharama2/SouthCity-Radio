@@ -1,4 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
+import { announcementsServer } from './server/announcements.js';
+import { advertisementsServer } from './server/advertisements.js';
 import { workspacePorts } from './src/data/workspaces.js';
 import { liveStationServer } from './server/liveStation.js';
 import { accountsServer, createAccounts } from './server/accounts.js';
@@ -15,7 +17,12 @@ export default defineConfig(({ mode }) => {
   }
   return {
     // Serves account config, publishes SouthCity Live settings, and proxies its metadata.
-    plugins: [accountsServer(accounts), liveStationServer({ accounts })],
+    plugins: [
+      accountsServer(accounts),
+      liveStationServer({ accounts }),
+      advertisementsServer({ accounts }),
+      announcementsServer({ accounts }),
+    ],
     server: {
       host: '0.0.0.0',
       port: mode === 'admin' ? workspacePorts.admin : workspacePorts.app,

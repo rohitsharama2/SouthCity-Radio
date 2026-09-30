@@ -1,9 +1,11 @@
+import { announcementsPath, defaultAnnouncements } from '../src/data/announcements.js';
 import {
   liveServer,
   liveMetadataPath,
   liveEndpoints,
   liveStationDefaults,
 } from '../src/data/liveStream.js';
+import { advertisementsPath, emptyAdvertisements } from '../src/data/advertisements.js';
 import { accountEndpoints } from '../src/data/accounts.js';
 // Synthetic responses keep tests independent of the real station server.
 const liveStats = {
@@ -31,6 +33,17 @@ export const navigate = async (page, label) => {
 // depend on a developer's .env. Returns the publish requests it received.
 export const mockSouthCityServer = async (page, { accounts = { configured: false } } = {}) => {
   let config = { ...liveStationDefaults, updatedAt: null };
+  let announcementSettings = defaultAnnouncements();
+  await page.route(`**${announcementsPath}`, async (route) => {
+    if (route.request().method() === 'PUT')
+      announcementSettings = route.request().postDataJSON().settings;
+    return route.fulfill({ json: { settings: announcementSettings, updatedAt: null } });
+  });
+  let cards = emptyAdvertisements();
+  await page.route(`**${advertisementsPath}`, async (route) => {
+    if (route.request().method() === 'PUT') cards = route.request().postDataJSON().cards;
+    return route.fulfill({ json: { cards, updatedAt: null } });
+  });
   const publishes = [];
   await page.route(`**${accountEndpoints.config}`, (route) => route.fulfill({ json: accounts }));
   await page.route(`**${liveEndpoints.config}`, async (route) => {

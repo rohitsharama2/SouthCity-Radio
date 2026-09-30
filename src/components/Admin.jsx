@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
+import AdvertisementAdmin from './AdvertisementAdmin.jsx';
+import AnnouncementAdmin from './AnnouncementAdmin.jsx';
 import {
   LayoutDashboard,
+  Megaphone,
+  Image,
   Radio,
   Signal,
   Disc3,
@@ -65,6 +69,8 @@ import {
 const nav = [
   ['Dashboard', LayoutDashboard],
   ['Stations', Radio],
+  ['Advertisements', Image],
+  ['Announcements', Megaphone],
   ['Live Streams', Signal],
   ['AutoDJ', Disc3],
   ['Playlists', ListMusic],
@@ -699,10 +705,17 @@ export default function Admin({ onExit, theme, setTheme }) {
           <div className="admin-preview-notice">
             <Signal size={14} />
             <span>
-              Interactive operations preview. Changes are local drafts and do not control live
-              Centova Cast servers.
+              {['Advertisements', 'Announcements'].includes(view)
+                ? 'Content drafts stay in this browser. Publishing updates the listener Home page.'
+                : 'Interactive operations preview. Changes are local drafts and do not control live Centova Cast servers.'}
             </span>
           </div>
+          {view === 'Announcements' && (
+            <AnnouncementAdmin allowed={!accountsOn || canPublish(account.profile?.role)} />
+          )}
+          {view === 'Advertisements' && (
+            <AdvertisementAdmin allowed={!accountsOn || canPublish(account.profile?.role)} />
+          )}
           {view === 'Dashboard' && (
             <>
               <div className="metric-grid">

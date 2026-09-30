@@ -2,7 +2,7 @@
 
 **Your city. Your sound.** A premium, responsive radio product with an independent consumer identity and a separate broadcast operations workspace.
 
-This repository contains a working **React web prototype**, optimized for mobile and desktop. It is not a native iOS/Android application or a connected Centova Cast management client. **SouthCity Live** plays the real station broadcast; the other stations are samples. All administrative mutations are local drafts; no live station is changed.
+This repository contains a working **React web prototype**, optimized for mobile and desktop. It is not a native iOS/Android application or a connected Centova Cast management client. **SouthCity Live** plays the real station broadcast; the other stations are samples. Most administrative controls save local drafts. SouthCity Live settings and Home advertisements have explicit publishing flows.
 
 ## Run locally
 
@@ -35,7 +35,7 @@ npm run preview
 
 | Area              | Implemented experience                                                                                                                                                                    |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Home              | Editorial hero, spotlight show, continue listening, live stations, genre cards, recommendations, popularity                                                                               |
+| Home              | Main listening card and four advertisement cards                                                                                                                                          |
 | Discover / Search | Search by station, show, track, artist, and host; combined genre/language filters; empty results; Cmd/Ctrl+K                                                                              |
 | Live              | Live station catalog, listener counts, programming schedule                                                                                                                               |
 | Station           | Artwork, follow, listen, sample metadata, schedule, hosts, recent tracks, related stations                                                                                                |
@@ -173,6 +173,22 @@ The audio provider wraps both workspaces. Navigation does not recreate the audio
 - Browser playback can continue while navigating and supports compatible system media controls. The Android app adds a foreground media service with notification and lock-screen controls. **Interruptions (calls, other audio), lock-screen artwork, Bluetooth routing, and iOS still need native work and device testing.**
 - Favorites, profile, shows, and theme survive browser refresh. With accounts configured, favorites, followed shows, and display name sync across browsers when the listener signs in or reloads (there is no live push between open tabs). Account deletion from the app, push notifications, downloads, recorded episodes, and entitlement enforcement are not implemented.
 - Photos load from Unsplash, avatars from Pravatar, and fonts from Google Fonts. Replace remote samples with owned/approved, self-hosted assets before release.
+
+## Home announcements
+
+A scrolling announcement ticker appears above the Home listening card. It pauses on hover or keyboard focus, has a pause/resume button, and shows static text when reduced motion is enabled. The initial message is a station welcome, not a live news feed.
+
+In **Admin → Announcements**, enter up to six messages (one per line, up to 200 characters each), preview them, save a browser-only draft, or publish them to Home. Turn off **Show announcement ticker** and publish to hide it. Open listener apps refresh published settings every 15 seconds while visible.
+
+With Supabase accounts, apply [`supabase/migrations/20260930010000_announcements.sql`](supabase/migrations/20260930010000_announcements.sql) after the accounts migration. Publishing requires a station manager or administrator and is checked by the server and row-level security. Without accounts, same-computer publishing saves `.local/announcements.json`, shared by the local app and admin servers. No scheduling, notifications, or external news service is connected.
+
+## Home advertisements
+
+Home shows four advertisement cards below the listening card, with two columns on phones. Unused or disabled positions are labelled as available ad spaces; they are not sample sponsors.
+
+In **Admin → Advertisements**, choose a card position and edit its sponsor, title, description, HTTPS image address, optional destination address, and enabled state. A preview shows the card before saving. **Save local draft** saves only in that admin browser. **Publish advertisements** saves all four cards through the server; listener Home screens refresh within 15 seconds while visible. Image URLs use publicly hosted artwork; this feature does not upload files, schedule campaigns, track impressions, or manage billing.
+
+With Supabase accounts, apply [`supabase/migrations/20260930000000_advertisements.sql`](supabase/migrations/20260930000000_advertisements.sql) after the accounts migration. Only station managers and administrators can publish, enforced by the server and row-level security. If the table is missing, admin reports the setup error and preserves the draft. Without accounts, publishing is limited to the same computer and writes `.local/advertisements.json`, shared by both local servers. Hosted deployments without Supabase need persistent storage for that file.
 
 ## Live station
 

@@ -1,3 +1,5 @@
+import { announcementsMiddleware } from './announcements.js';
+import { advertisementsMiddleware } from './advertisements.js';
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -23,7 +25,12 @@ const types = {
   '.txt': 'text/plain; charset=utf-8',
 };
 const accounts = createAccounts(process.env);
-const api = [accountsMiddleware(accounts), liveStationMiddleware({ accounts })];
+const api = [
+  accountsMiddleware(accounts),
+  liveStationMiddleware({ accounts }),
+  advertisementsMiddleware({ accounts }),
+  announcementsMiddleware({ accounts }),
+];
 
 async function findFile(pathname) {
   const file = path.join(root, path.normalize(decodeURIComponent(pathname)));
