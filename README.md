@@ -58,15 +58,15 @@ npm run preview
 
 The listener apps need the SouthCity server for account settings, published SouthCity Live settings, and the song metadata proxy. `npm start` runs it for production ([`server/production.js`](server/production.js)): it serves the built web app (`npm run build`) and the same `/api` routes as the dev servers, on `PORT` (default 4180). It keeps nothing on disk when accounts are configured, so free hosts that sleep or restart lose nothing.
 
-**Deploy on Koyeb (free instance):**
+**Deploy on Render (free web service):**
 
-1. Sign in to [koyeb.com](https://www.koyeb.com) with GitHub and create a **Web Service** from this repository, branch `main`.
-2. Builder: **Buildpack**. The build runs `npm run build`; the run command is `npm start`. Exposed port: **8000**, HTTP, path `/`.
+1. Sign in to [render.com](https://render.com) with GitHub and choose **New → Web Service** from this repository, branch `main`.
+2. Language **Node**. Build command `npm ci && npm run build`, start command `npm start`. Render sets `PORT` itself.
 3. Environment variables: `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (the same public values as `.env`). Never add a secret or service-role key.
-4. Instance: **Free**. After deploying, note the service address (`https://<name>.koyeb.app`).
+4. Instance type: **Free**. After deploying, note the service address (`https://<name>.onrender.com`).
 5. In Supabase, run the live station migration and add the redirect URLs listed under [Accounts](#set-it-up-free-plan).
 
-The free instance sleeps after an hour without traffic and wakes in a few seconds. Song metadata is fetched from the stream at most every 5 seconds and settings from Supabase at most every 10 seconds, however many listeners are polling. The hosted web app is HTTPS, so browsers there cannot play the plain-HTTP SouthCity Live stream until it has SSL (see [Live station](#live-station)); the Android app can.
+The free service sleeps after 15 minutes without traffic and takes about a minute to wake. Audio plays straight from the stream server, so listening is unaffected; song details and sign-in appear once the server is awake. Song metadata is fetched from the stream at most every 5 seconds and settings from Supabase at most every 10 seconds, however many listeners are polling. The hosted web app is HTTPS, so browsers there cannot play the plain-HTTP SouthCity Live stream until it has SSL (see [Live station](#live-station)); the Android app can.
 
 ## Android beta build
 
@@ -112,7 +112,7 @@ Accounts are optional. Without them the app works exactly as a local preview: th
    Roles are `listener` (default), `dj`, `station_manager`, and `admin`. Roles can only be changed here, not from the app.
 
 6. Run [`supabase/migrations/20260926000000_live_station.sql`](supabase/migrations/20260926000000_live_station.sql). It stores SouthCity Live's published settings: anyone can read them, and only station managers and administrators can change them.
-7. For the [hosted server](#hosted-server) and the Android app, add these Redirect URLs: `https://<name>.koyeb.app/**` and `com.southcity.radio://auth`.
+7. For the [hosted server](#hosted-server) and the Android app, add these Redirect URLs: `https://<name>.onrender.com/**` and `com.southcity.radio://auth`.
 8. Before real listeners sign up, connect an SMTP provider (below). The built-in sender allows only a few emails per hour.
 
 **Keys:** the project URL and publishable key are public by design. The app reads them at runtime from `/api/auth-config` and they are not built into the bundle. **Never** put the `service_role`/secret key in `.env`. The server refuses to start accounts with one, because that key would be sent to browsers.
