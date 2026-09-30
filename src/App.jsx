@@ -85,6 +85,7 @@ import {
 } from './components/useAccount.js';
 import { SignInForm } from './components/SignIn.jsx';
 import { mergeLibrary, roleLabels, validateDisplayName, isStaff } from './data/accounts.js';
+import { androidApp, serverUrl } from './components/server.js';
 const navigation = [
   { name: 'Home', icon: Home },
   { name: 'Discover', icon: Compass },
@@ -1303,7 +1304,8 @@ function RadioApp() {
             <Brand />
             <span>Independent voices. A shared frequency.</span>
             <small>
-              © {new Date().getFullYear()} Radio South City <span>·</span> Interactive preview
+              © {new Date().getFullYear()} Radio South City <span>·</span> <PrivacyLink />{' '}
+              <span>·</span> Interactive preview
             </small>
           </footer>
         </main>
@@ -1731,6 +1733,9 @@ function RadioApp() {
                   Preview audio and images load from external providers, who receive normal network
                   requests.
                 </p>
+                <p>
+                  <PrivacyLink>Read the full privacy policy</PrivacyLink>
+                </p>
                 <Button variant="secondary" onClick={clearListeningData}>
                   {signedIn ? 'Clear my listening data' : 'Clear local listening data'}
                 </Button>
@@ -1764,6 +1769,25 @@ function RadioApp() {
         </Modal>
       )}
     </div>
+  );
+}
+// The policy is a page on the SouthCity server (public/privacy.html). The Android app opens it
+// in the system browser so the app, and any playing audio, stays put.
+const privacyUrl = serverUrl('/privacy.html');
+function PrivacyLink({ children = 'Privacy policy' }) {
+  const openInBrowser = (e) => {
+    e.preventDefault();
+    import('@capacitor/browser').then(({ Browser }) => Browser.open({ url: privacyUrl }));
+  };
+  return (
+    <a
+      href={privacyUrl}
+      target="_blank"
+      rel="noopener"
+      onClick={androidApp ? openInBrowser : undefined}
+    >
+      {children}
+    </a>
   );
 }
 function AccountCard({ account, librarySync, onSignIn, onSignOut, onRetry }) {

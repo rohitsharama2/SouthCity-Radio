@@ -1339,6 +1339,9 @@ input::placeholder {
 .page-footer > small span {
   margin: 0 8px;
 }
+.page-footer a {
+  color: inherit;
+}
 .player-bar {
   position: fixed;
   bottom: 0;

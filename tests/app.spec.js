@@ -254,3 +254,10 @@ test('admin publishes live station changes to the consumer app', async ({ page }
   await expect.poll(() => streamRequests.length).toBeGreaterThan(0);
   expect(streamRequests[0]).toBe('http://127.0.0.1:9/stream');
 });
+test('the privacy policy is linked from the app and served', async ({ page }) => {
+  const link = page.locator('.page-footer').getByRole('link', { name: 'Privacy policy' });
+  await expect(link).toHaveAttribute('href', '/privacy.html');
+  const response = await page.request.get('/privacy.html');
+  expect(response.ok()).toBe(true);
+  expect(await response.text()).toContain('rsouthcity@gmail.com');
+});
