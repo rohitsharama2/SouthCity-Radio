@@ -1,0 +1,374 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Radio South City \u2014 Runtime Architecture",
+    "output": ".archify/architecture-southcity-20261001-105225/southcity.html",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/rohitsharama2/SouthCity-Radio.git",
+      "revision": "ec66b0599996bb7d63a3bb2c125115092202e671",
+      "provider": "github",
+      "link_mode": "web"
+    }
+  },
+  "components": [
+    {
+      "id": "listener",
+      "type": "frontend",
+      "label": "Listener app",
+      "sublabel": "React web / Android WebView",
+      "pos": [
+        40,
+        280
+      ],
+      "size": [
+        210,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/App.jsx",
+          "line": 95,
+          "end_line": 115
+        },
+        {
+          "path": "src/components/server.js",
+          "line": 1,
+          "end_line": 6
+        },
+        {
+          "path": "capacitor.config.json",
+          "line": 1,
+          "end_line": 16
+        }
+      ]
+    },
+    {
+      "id": "audio",
+      "type": "frontend",
+      "label": "Persistent audio",
+      "sublabel": "HTMLAudioElement + media controls",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        210,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/components/AudioProvider.jsx",
+          "line": 5,
+          "end_line": 30
+        },
+        {
+          "path": "src/components/AudioProvider.jsx",
+          "line": 98,
+          "end_line": 131
+        },
+        {
+          "path": "src/components/mediaSession.js",
+          "line": 1,
+          "end_line": 29
+        }
+      ]
+    },
+    {
+      "id": "streams",
+      "type": "external",
+      "label": "Radio streams",
+      "sublabel": "SouthCity Live / SomaFM samples",
+      "pos": [
+        430,
+        40
+      ],
+      "size": [
+        210,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/data/liveStream.js",
+          "line": 1,
+          "end_line": 24
+        },
+        {
+          "path": "src/data/stations.js",
+          "line": 1,
+          "end_line": 50
+        }
+      ],
+      "tag": "Live default uses HTTP"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "SouthCity server",
+      "sublabel": "Config, metadata, content APIs",
+      "pos": [
+        430,
+        280
+      ],
+      "size": [
+        210,
+        80
+      ],
+      "sources": [
+        {
+          "path": "server/production.js",
+          "line": 24,
+          "end_line": 34
+        },
+        {
+          "path": "server/accounts.js",
+          "line": 15,
+          "end_line": 52
+        },
+        {
+          "path": "server/liveStation.js",
+          "line": 172,
+          "end_line": 228
+        }
+      ],
+      "tag": "Role checks on configured writes"
+    },
+    {
+      "id": "supabase",
+      "type": "security",
+      "label": "Optional Supabase",
+      "sublabel": "Auth + PostgreSQL / RLS",
+      "pos": [
+        820,
+        280
+      ],
+      "size": [
+        210,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/components/useAccount.js",
+          "line": 105,
+          "end_line": 131
+        },
+        {
+          "path": "server/publishedContent.js",
+          "line": 18,
+          "end_line": 42
+        },
+        {
+          "path": "supabase/migrations/20260924000000_accounts.sql",
+          "line": 7,
+          "end_line": 29
+        }
+      ]
+    },
+    {
+      "id": "admin",
+      "type": "frontend",
+      "label": "Admin workspace",
+      "sublabel": "Staff UI; most controls are drafts",
+      "pos": [
+        430,
+        560
+      ],
+      "size": [
+        210,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/components/Admin.jsx",
+          "line": 138,
+          "end_line": 155
+        },
+        {
+          "path": "src/components/Admin.jsx",
+          "line": 548,
+          "end_line": 552
+        },
+        {
+          "path": "src/components/AdvertisementAdmin.jsx",
+          "line": 60,
+          "end_line": 79
+        }
+      ]
+    },
+    {
+      "id": "serverfiles",
+      "type": "database",
+      "label": "Local JSON files",
+      "sublabel": "Server-side fallback only",
+      "pos": [
+        820,
+        560
+      ],
+      "size": [
+        210,
+        80
+      ],
+      "sources": [
+        {
+          "path": "server/publishedContent.js",
+          "line": 44,
+          "end_line": 57
+        },
+        {
+          "path": "server/advertisements.js",
+          "line": 1,
+          "end_line": 18
+        },
+        {
+          "path": "server/liveStation.js",
+          "line": 31,
+          "end_line": 50
+        }
+      ],
+      "tag": "Used when accounts are off"
+    },
+    {
+      "id": "clientstorage",
+      "type": "database",
+      "label": "Browser / app storage",
+      "sublabel": "Preferences, history, local drafts",
+      "pos": [
+        40,
+        560
+      ],
+      "size": [
+        210,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/data/storage.js",
+          "line": 1,
+          "end_line": 35
+        },
+        {
+          "path": "src/App.jsx",
+          "line": 187,
+          "end_line": 199
+        },
+        {
+          "path": "src/components/AdvertisementAdmin.jsx",
+          "line": 60,
+          "end_line": 65
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "listen",
+      "from": "listener",
+      "to": "audio",
+      "label": "Play / pause",
+      "variant": "emphasis"
+    },
+    {
+      "id": "stream-audio",
+      "from": "audio",
+      "to": "streams",
+      "label": "Direct audio",
+      "variant": "emphasis"
+    },
+    {
+      "id": "poll-api",
+      "from": "listener",
+      "to": "api",
+      "label": "Read / poll JSON",
+      "variant": "default"
+    },
+    {
+      "id": "metadata",
+      "from": "api",
+      "to": "streams",
+      "label": "Live stats proxy",
+      "variant": "default"
+    },
+    {
+      "id": "accounts",
+      "from": "listener",
+      "to": "supabase",
+      "label": "SDK if configured",
+      "variant": "security"
+    },
+    {
+      "id": "publish",
+      "from": "admin",
+      "to": "api",
+      "label": "Publish; role gate",
+      "variant": "security"
+    },
+    {
+      "id": "server-db",
+      "from": "api",
+      "to": "supabase",
+      "label": "Auth + REST if configured",
+      "variant": "security"
+    },
+    {
+      "id": "fallback",
+      "from": "api",
+      "to": "serverfiles",
+      "label": "Accounts off",
+      "variant": "dashed"
+    },
+    {
+      "id": "prefs",
+      "from": "listener",
+      "to": "clientstorage",
+      "label": "Local preferences",
+      "variant": "default"
+    },
+    {
+      "id": "drafts",
+      "from": "admin",
+      "to": "clientstorage",
+      "label": "Save draft",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Listener journey",
+      "items": [
+        "A single AudioProvider stays mounted above consumer navigation. Audio goes straight to the selected stream.",
+        "Home renders four advertisement slots and a pausable announcement ticker. Both poll while the page is visible.",
+        "Android bundles the web app, routes API requests to the configured server and uses native media-session controls."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Publication and trust",
+      "items": [
+        "With accounts configured, staff access the workspace; only managers and administrators may publish. The server rechecks the session and role.",
+        "Supabase RLS and column grants enforce account ownership and content publishing. Writes use the caller token, not a service-role secret.",
+        "With accounts off, publishing accepts only loopback requests and stores JSON on the server. Browser drafts remain distinct."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Implementation boundaries",
+      "items": [
+        "The server proxies live metadata, not continuous listener audio. Centova administration is not connected.",
+        "Six additional stations, schedules, analytics and many admin operations remain illustrative or local drafts.",
+        "Default live audio is plain HTTP. TLS at the stream, deployed migrations and Android device reliability are deployment checks, not proven by this source map."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Evidence snapshot",
+      "items": [
+        "Source evidence is pinned to ec66b05. No environment files, credentials, local drafts or generated APKs were read into this map.",
+        "The listener navigation rails are temporarily hidden. Legacy browser tests still assume those rails exist.",
+        "This analysis describes source behavior; it does not certify the running database, hosting configuration or all native-device behavior."
+      ]
+    }
+  ]
+}

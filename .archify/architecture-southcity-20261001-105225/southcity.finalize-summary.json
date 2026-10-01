@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/candidate.json",
+    "sha256": "9e5572a60969b50914f6c25eba5f7d355274c2812e357fbb43862ad0f221108e",
+    "bytes": 8961
+  },
+  "artifact": {
+    "path": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/southcity.html",
+    "sha256": "aa828b6ad954cc9323dc58a1d7c204972bcd3da424f3b3d60ad358ba934a4537",
+    "bytes": 769863
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/southcity.finalize.json",
+    "summaryReceipt": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/southcity.finalize-summary.json",
+    "browserCheckReceipt": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/southcity.browser-check.json"
+  },
+  "update": {
+    "status": "unavailable",
+    "installedVersion": null,
+    "availableVersion": null,
+    "releaseNotes": null,
+    "checkedAt": null,
+    "source": null,
+    "noticeRequired": false,
+    "noticeText": null,
+    "reason": "disabled"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2039,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 2,
+      "routesOverSuggestedBends": 2
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "metadata",
+            "from": "api",
+            "to": "streams",
+            "label": "Live stats proxy",
+            "collectionIndex": 3,
+            "artifactIndex": 4
+          },
+          "right": {
+            "id": "accounts",
+            "from": "listener",
+            "to": "supabase",
+            "label": "SDK if configured",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "point": [
+            535,
+            277
+          ]
+        },
+        {
+          "left": {
+            "id": "server-db",
+            "from": "api",
+            "to": "supabase",
+            "label": "Auth + REST if configured",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "right": {
+            "id": "fallback",
+            "from": "api",
+            "to": "serverfiles",
+            "label": "Accounts off",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "point": [
+            664,
+            327
+          ],
+          "sharedNode": "api"
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "id": "accounts",
+            "from": "listener",
+            "to": "supabase",
+            "label": "SDK if configured",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "bends": 4,
+          "stretch": 1.126,
+          "directCorridorBlockers": [
+            {
+              "id": "api",
+              "label": "SouthCity server",
+              "box": [
+                430,
+                280,
+                210,
+                80
+              ]
+            }
+          ]
+        },
+        {
+          "relationship": {
+            "id": "server-db",
+            "from": "api",
+            "to": "supabase",
+            "label": "Auth + REST if configured",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "bends": 4,
+          "stretch": 1.165
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "api → streams crosses listener → supabase: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "api → supabase and api → serverfiles cross next to api: move node supabase or serverfiles so the two reach api from different sides (for example one level with it, one directly above or below it).",
+      "api → supabase needs 4 bends: move node api or supabase so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

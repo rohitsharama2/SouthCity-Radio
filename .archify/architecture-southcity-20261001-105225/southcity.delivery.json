@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "411ba6d0-3c6d-4689-b627-8051e691f81d",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/candidate.json",
+  "output": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/southcity.html",
+  "specification": {
+    "sha256": "a02337c75ec31717ccfa18e7b9085fde862db21e2b784c18d752cbc878b24906",
+    "bytes": 8961
+  },
+  "artifact": {
+    "sha256": "65043fea1b2abff3f5e97428b7aa2ac63cc0ba751439733c3eb1eb25a35a6c2c",
+    "bytes": 769573
+  }
+}

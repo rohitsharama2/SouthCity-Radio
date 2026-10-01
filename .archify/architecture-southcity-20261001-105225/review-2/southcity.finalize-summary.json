@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/candidate.json",
+    "sha256": "a02337c75ec31717ccfa18e7b9085fde862db21e2b784c18d752cbc878b24906",
+    "bytes": 8961
+  },
+  "artifact": {
+    "path": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/southcity.html",
+    "sha256": "65043fea1b2abff3f5e97428b7aa2ac63cc0ba751439733c3eb1eb25a35a6c2c",
+    "bytes": 769573
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/review-2/southcity.finalize.json",
+    "summaryReceipt": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/review-2/southcity.finalize-summary.json",
+    "browserCheckReceipt": "/Users/rohitsharma/Documents/SouthCity-Radio/.archify/architecture-southcity-20261001-105225/review-2/southcity.browser-check.json"
+  },
+  "update": {
+    "status": "unavailable",
+    "installedVersion": null,
+    "availableVersion": null,
+    "releaseNotes": null,
+    "checkedAt": null,
+    "source": null,
+    "noticeRequired": false,
+    "noticeText": null,
+    "reason": "disabled"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2249,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "poll-api",
+            "from": "listener",
+            "to": "api",
+            "label": "Read / poll JSON",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "right": {
+            "id": "accounts",
+            "from": "listener",
+            "to": "supabase",
+            "label": "SDK if configured",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "point": [
+            340,
+            276
+          ],
+          "sharedNode": "listener"
+        }
+      ],
+      "detours": [],
+      "truncated": false
+    },
+    "hints": [
+      "listener → api and listener → supabase cross next to listener: move node api or supabase so the two reach listener from different sides (for example one level with it, one directly above or below it)."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

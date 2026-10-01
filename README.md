@@ -134,6 +134,8 @@ See [design system guidance](docs/DESIGN_SYSTEM.md) and [feature and production 
 
 ## Architecture
 
+See the [source-backed architecture analysis](docs/ARCHITECTURE.md) and [interactive Archify map](.archify/architecture-southcity-20261001-105225/southcity.html) for runtime flows, storage boundaries, and maintenance observations.
+
 ```text
 src/
   App.jsx                     Consumer navigation and feature screens
