@@ -278,5 +278,5 @@ test('the privacy policy is linked from the app and served', async ({ page }) =>
   await expect(link).toHaveAttribute('href', '/privacy.html');
   const response = await page.request.get('/privacy.html');
   expect(response.ok()).toBe(true);
-  expect(await response.text()).toContain('rsouthcity@gmail.com');
+  expect(await response.text()).toContain('admin@radiosouthcity.com');
 });

@@ -89,6 +89,14 @@ What differs from the web app:
 
 The stream is plain `http://`, so the app is served from `http://localhost` and allows cleartext traffic. Switch both back once the stream has HTTPS.
 
+## Production identity
+
+The production domain is **radiosouthcity.com** and the administrative/contact email is **admin@radiosouthcity.com**. The previous Gmail address is being retired.
+
+For the production web app, use `https://radiosouthcity.com` as the Supabase Site URL and include `https://radiosouthcity.com/**` in the allowed redirects (alongside the Android deep link and any development URLs still in use).
+
+Apply [`supabase/migrations/20261003000000_workspace_admin.sql`](supabase/migrations/20261003000000_workspace_admin.sql) to grant the new email administrator access after verification and stop automatic grants to the retired address. It preserves existing account data and existing roles; it does not delete the old account or revoke its existing role. Historical migrations retain the address used at the time.
+
 ## Accounts (Supabase)
 
 Listening requires a signed-in Supabase account. Play buttons open sign-in for guests; playback stays blocked while accounts are loading or unavailable, and signing out stops audio. The stream URL itself remains public: this app gate does not protect direct access to the broadcast. Without accounts configured, browsing and local library edits remain available, the admin opens as a local preview, and publishing is accepted only from this computer. With accounts configured:
