@@ -15,7 +15,14 @@ const token = [
   'test',
 ].join('.');
 async function mockSupabase(page, { role = 'listener', follows = [], signedIn = true } = {}) {
-  const state = { role, follows: [...follows], writes: [], otp: [], failWrites: false };
+  const state = {
+    role,
+    name: 'Rohit Sharma',
+    follows: [...follows],
+    writes: [],
+    otp: [],
+    failWrites: false,
+  };
   if (signedIn)
     await page.addInitScript(
       (session) => {
@@ -58,10 +65,11 @@ async function mockSupabase(page, { role = 'listener', follows = [], signedIn = 
     if (url.pathname === '/auth/v1/logout') return route.fulfill({ status: 204 });
     if (url.pathname === '/rest/v1/profiles') {
       if (method === 'PATCH') {
+        state.name = request.postDataJSON().display_name;
         state.writes.push({ method, table: 'profiles', body: request.postDataJSON() });
         return rows([{ display_name: request.postDataJSON().display_name }]);
       }
-      return rows([{ display_name: 'Rohit Sharma', role: state.role }]);
+      return rows([{ display_name: state.name, role: state.role }]);
     }
     if (url.pathname === '/rest/v1/follows') {
       if (method === 'GET') return rows(state.follows);
@@ -83,9 +91,7 @@ test('a signed-out listener can request a one-time sign-in link', async ({ page 
   await mockSouthCityServer(page, { accounts: project });
   const supabase = await mockSupabase(page, { signedIn: false });
   await page.goto('/');
-  await navigate(page, 'Profile');
-  await expect(page.getByText('Keep your library everywhere')).toBeVisible();
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByRole('button', { name: 'Start listening', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Email').fill('not-an-email');
   await dialog.getByRole('button', { name: 'Email me a sign-in link' }).click();
@@ -183,4 +189,128 @@ test('DJs can view the workspace but only managers and admins publish', async ({
   await page.getByRole('button', { name: 'Publish to app' }).click();
   await expect(page.locator('.form-success')).toContainText('Published');
   expect(publishes).toEqual([{ authorization: `Bearer ${token}` }]);
+});
+
+async function trackPlayback(page) {
+  await page.addInitScript(() => {
+    window.playCalls = 0;
+    window.mediaActions = {};
+    navigator.mediaSession.setActionHandler = (action, handler) => {
+      window.mediaActions[action] = handler;
+    };
+    HTMLMediaElement.prototype.play = function () {
+      window.playCalls += 1;
+      Object.defineProperty(this, 'paused', { configurable: true, value: false });
+      this.dispatchEvent(new Event('playing'));
+      return Promise.resolve();
+    };
+    HTMLMediaElement.prototype.pause = function () {
+      Object.defineProperty(this, 'paused', { configurable: true, value: true });
+      this.dispatchEvent(new Event('pause'));
+    };
+  });
+}
+
+test('guest playback is blocked from Home and both players', async ({ page }) => {
+  await mockSouthCityServer(page, { accounts: project });
+  await mockSupabase(page, { signedIn: false });
+  await trackPlayback(page);
+  await page.goto('/');
+  for (const label of ['Start listening', 'Play audio']) {
+    await page.getByRole('button', { name: label, exact: true }).click();
+    await expect(page.getByRole('dialog')).toContainText('Sign in to listen');
+    await page.getByRole('dialog').getByLabel('Email').waitFor();
+    await page.keyboard.press('Escape');
+  }
+  await page.getByRole('button', { name: 'Open full player', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Play audio', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('Sign in to listen');
+  expect(await page.evaluate(() => window.playCalls)).toBe(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sc-history') || '[]'))).toEqual(
+    [],
+  );
+});
+
+test('signed-in playback stops on sign-out and system controls cannot restart it', async ({
+  page,
+}) => {
+  await mockSouthCityServer(page, { accounts: project });
+  await mockSupabase(page);
+  await trackPlayback(page);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Good afternoon, Rohit.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Start listening', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Pause audio', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Your profile', exact: true }).click();
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Play audio', exact: true })).toBeVisible();
+  await page.evaluate(() => window.mediaActions.play?.());
+  expect(await page.evaluate(() => window.playCalls)).toBe(1);
+  await page.getByRole('button', { name: 'Play audio', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('Sign in to listen');
+});
+
+for (const signedIn of [false, true]) {
+  test(`profile saves the exact display name (${signedIn ? 'account' : 'sign-in required'})`, async ({
+    page,
+  }) => {
+    await mockSouthCityServer(page, { accounts: project });
+    const api = await mockSupabase(page, { signedIn });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Your profile', exact: true }).click();
+    await expect(
+      page.getByText(signedIn ? 'Signed in as rohit@example.com' : 'Keep your library everywhere'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Edit profile' }).click();
+    if (!signedIn) {
+      await expect(page.getByRole('dialog')).toContainText(
+        'Sign in to listen and save your profile',
+      );
+      expect(api.writes.filter((write) => write.table === 'profiles')).toHaveLength(0);
+      return;
+    }
+    await page.getByLabel('Display name').fill('udayan');
+    await page.getByRole('button', { name: 'Save profile' }).click();
+    await expect(page.locator('.profile-hero h2')).toHaveText('udayan');
+    expect(api.writes.find((write) => write.table === 'profiles').body).toEqual({
+      display_name: 'udayan',
+    });
+    await page.reload();
+    await page.getByRole('button', { name: 'Your profile', exact: true }).click();
+    await expect(page.locator('.profile-hero h2')).toHaveText('udayan');
+  });
+}
+
+test('unavailable accounts cannot bypass the listening requirement', async ({ page }) => {
+  await mockSouthCityServer(page);
+  await trackPlayback(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start listening', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('accounts are currently unavailable');
+  expect(await page.evaluate(() => window.playCalls)).toBe(0);
+});
+
+test('profile API failures keep the form and allow retry without claiming a save', async ({
+  page,
+}) => {
+  await mockSouthCityServer(page, { accounts: project });
+  await mockSupabase(page);
+  let fail = true;
+  await page.route(`${project.url}/rest/v1/profiles*`, (route) => {
+    if (route.request().method() === 'PATCH' && fail)
+      return route.fulfill({ status: 503, json: { message: 'Profile service unavailable' } });
+    return route.fallback();
+  });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Good afternoon, Rohit.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Your profile', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit profile' }).click();
+  await page.getByLabel('Display name').fill('udayan');
+  await page.getByRole('button', { name: 'Save profile' }).click();
+  await expect(page.locator('.toast')).toContainText('Profile service unavailable');
+  await expect(page.getByLabel('Display name')).toHaveValue('udayan');
+  await expect(page.locator('.profile-hero h2')).toHaveText('Rohit Sharma');
+  fail = false;
+  await page.getByRole('button', { name: 'Save profile' }).click();
+  await expect(page.locator('.profile-hero h2')).toHaveText('udayan');
 });

@@ -12,7 +12,9 @@ export function advertisementsMiddleware(options = {}) {
     field: 'cards',
     defaults: emptyAdvertisements,
     validate: validateAdvertisements,
-    migration: 'supabase/migrations/20260930000000_advertisements.sql',
+    migration:
+      'supabase/migrations/20260930000000_advertisements.sql and supabase/migrations/20261002010000_flexible_advertisements.sql',
+    maxBodyBytes: 200000,
     file: path.resolve('.local/advertisements.json'),
     ...options,
   });

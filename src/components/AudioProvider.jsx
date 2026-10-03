@@ -1,9 +1,14 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useLiveStream } from './useLiveStream.js';
+import { useAccount } from './useAccount.js';
 import { setMediaActionHandler, setMediaMetadata, setMediaPlaybackState } from './mediaSession.js';
 const AudioContext = createContext(null);
 export const useAudio = () => useContext(AudioContext);
 export function AudioProvider({ children }) {
+  const account = useAccount();
+  const mayListen = account.phase === 'signed-in';
+  const access = useRef(false);
+  access.current = mayListen;
   const audio = useRef(null),
     timer = useRef(null),
     selected = useRef(null);
@@ -72,6 +77,15 @@ export function AudioProvider({ children }) {
     if (audio.current) audio.current.volume = volume;
   }, [volume]);
   useEffect(() => {
+    if (mayListen) return;
+    stop();
+    clearTimeout(timer.current);
+    setSleep(0);
+    audio.current?.removeAttribute('src');
+    audio.current?.load();
+    selected.current = null;
+  }, [mayListen]);
+  useEffect(() => {
     if (!station) return;
     setMediaMetadata(
       station.live
@@ -93,6 +107,7 @@ export function AudioProvider({ children }) {
     setMediaPlaybackState(session ? (status === 'playing' ? 'playing' : 'paused') : 'none');
   }, [session, status]);
   async function play(next) {
+    if (!access.current) return;
     const player = audio.current;
     if (!player || !next) return;
     const currentAttempt = ++attempt.current;

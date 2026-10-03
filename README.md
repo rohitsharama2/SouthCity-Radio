@@ -35,7 +35,7 @@ npm run preview
 
 | Area              | Implemented experience                                                                                                                                                                    |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Home              | Main listening card and four advertisement cards                                                                                                                                          |
+| Home              | Main listening card and an ordered, configurable advertisement list                                                                                                                       |
 | Discover / Search | Search by station, show, track, artist, and host; combined genre/language filters; empty results; Cmd/Ctrl+K                                                                              |
 | Live              | Live station catalog, listener counts, programming schedule                                                                                                                               |
 | Station           | Artwork, follow, listen, sample metadata, schedule, hosts, recent tracks, related stations                                                                                                |
@@ -43,7 +43,7 @@ npm run preview
 | Player            | Real external preview audio, play/pause, persistent mini-player, full player, volume/mute, station switching, share, sleep timer, Media Session handlers                                  |
 | Library           | Persistent favorite stations, followed shows, actual local station history; honest empty states for episodes and downloads                                                                |
 | Profile           | Editable local name, notification preference, appearance, listening counts, privacy reset, help                                                                                           |
-| Accounts          | Optional Supabase sign-in by one-time email link (Google if enabled); favorites and followed shows sync to the account; staff roles gate the admin and publishing                         |
+| Accounts          | Required sign-in for playback by one-time email link (Google if enabled); favorites and followed shows sync to the account; staff roles gate the admin and publishing                     |
 | Welcome           | Two-step onboarding available from Profile; splash specimen in the component gallery                                                                                                      |
 | Admin             | Dashboard, station configuration drafts, monitoring, AutoDJ preference, playlist create/delete, local media selection, schedule drafts, DJs/users drafts, sample analytics and CSV export |
 | Design system     | Live palette previews, typography, shared cards and controls, audio states, skeletons, loading/error/empty states, dialog and splash specimens                                            |
@@ -91,7 +91,9 @@ The stream is plain `http://`, so the app is served from `http://localhost` and 
 
 ## Accounts (Supabase)
 
-Accounts are optional. Without them the app works exactly as a local preview: the library stays in the browser, the admin opens without sign-in, and publishing is accepted only from this computer. With them:
+Listening requires a signed-in Supabase account. Play buttons open sign-in for guests; playback stays blocked while accounts are loading or unavailable, and signing out stops audio. The stream URL itself remains public: this app gate does not protect direct access to the broadcast. Without accounts configured, browsing and local library edits remain available, the admin opens as a local preview, and publishing is accepted only from this computer. With accounts configured:
+
+- **Profile names** require sign-in and save through the Supabase API; failed saves preserve the form and do not report success.
 
 - **Listeners** sign in from Profile with a one-time email link (no password). Favorite stations and followed shows are saved to their account and merged with anything already saved in the browser. Recent stations, theme, and notification preference stay on each device. Signing out removes the account's copy from that browser.
 - **The admin workspace** requires a staff role. DJs can view it; only **station managers** and **administrators** can publish SouthCity Live changes. The SouthCity server checks the caller's session and role on every publish, so hiding a button is never the only protection.
@@ -164,7 +166,7 @@ supabase/migrations/          Tables and row-level security for accounts and liv
 android/                      Capacitor Android project for the listener app
 ```
 
-The audio provider wraps both workspaces. Navigation does not recreate the audio element. Local preferences and drafts use namespaced `localStorage` keys; selected media files are kept only as metadata in memory. Accounts are optional and use Supabase ([`src/components/useAccount.js`](src/components/useAccount.js), [`server/accounts.js`](server/accounts.js), rules in [`src/data/accounts.js`](src/data/accounts.js)). Supabase keeps the session in `localStorage` under `sc-auth`.
+The audio provider wraps both workspaces. Navigation does not recreate the audio element. Local preferences and drafts use namespaced `localStorage` keys; selected media files are kept only as metadata in memory. Listening accounts use Supabase ([`src/components/useAccount.js`](src/components/useAccount.js), [`server/accounts.js`](server/accounts.js), rules in [`src/data/accounts.js`](src/data/accounts.js)). Supabase keeps the session in `localStorage` under `sc-auth`.
 
 ## Audio and data honesty
 
@@ -186,11 +188,11 @@ With Supabase accounts, apply [`supabase/migrations/20260930010000_announcements
 
 ## Home advertisements
 
-Home shows four advertisement cards below the listening card, with two columns on phones. Unused or disabled positions are labelled as available ad spaces; they are not sample sponsors.
+Home shows only published, enabled advertisements in their saved order, with two columns on phones. Hidden cards leave no gaps, and an empty list hides the advertisement section. Selecting a card opens a detail popup with full artwork and an optional advertiser link.
 
-In **Admin → Advertisements**, choose a card position and edit its sponsor, title, description, HTTPS image address, optional destination address, and enabled state. A preview shows the card before saving. **Save local draft** saves only in that admin browser. **Publish advertisements** saves all four cards through the server; listener Home screens refresh within 15 seconds while visible. Image URLs use publicly hosted artwork; this feature does not upload files, schedule campaigns, track impressions, or manage billing.
+In **Admin → Advertisements**, add or remove cards, move the selected card earlier/later, hide/show it, and edit its sponsor, title, description, HTTPS image address, optional destination address, and enabled state. A preview shows the card before saving. **Save local draft** saves only in that admin browser. **Publish advertisements** saves the ordered list (up to 20 cards) through the server; listener Home screens refresh within 15 seconds while visible. Image URLs use publicly hosted artwork; this feature does not upload files, schedule campaigns, track impressions, or manage billing.
 
-With Supabase accounts, apply [`supabase/migrations/20260930000000_advertisements.sql`](supabase/migrations/20260930000000_advertisements.sql) after the accounts migration. Only station managers and administrators can publish, enforced by the server and row-level security. If the table is missing, admin reports the setup error and preserves the draft. Without accounts, publishing is limited to the same computer and writes `.local/advertisements.json`, shared by both local servers. Hosted deployments without Supabase need persistent storage for that file.
+With Supabase accounts, apply [`supabase/migrations/20260930000000_advertisements.sql`](supabase/migrations/20260930000000_advertisements.sql) after the accounts migration. Apply [`supabase/migrations/20261002010000_flexible_advertisements.sql`](supabase/migrations/20261002010000_flexible_advertisements.sql) to allow variable card counts, then [`supabase/migrations/20261002020000_advertisement_drafts.sql`](supabase/migrations/20261002020000_advertisement_drafts.sql) to add the requested hidden Home Chef and Property Listing drafts without replacing existing ads. Fill their sponsor/details and enable them before publishing. Only station managers and administrators can publish, enforced by the server and row-level security. If the table is missing, admin reports the setup error and preserves the draft. Without accounts, publishing is limited to the same computer and writes `.local/advertisements.json`, shared by both local servers. Hosted deployments without Supabase need persistent storage for that file.
 
 ## Live station
 

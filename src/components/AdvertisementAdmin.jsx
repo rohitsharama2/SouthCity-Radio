@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from './ui.jsx';
 import { AdvertisementCard, loadAdvertisements, publishAdvertisements } from './Advertisements.jsx';
-import { emptyAdvertisements, validateAdvertisements } from '../data/advertisements.js';
+import {
+  emptyAdvertisements,
+  newAdvertisement,
+  maxAdvertisements,
+  validateAdvertisements,
+} from '../data/advertisements.js';
 import { readLocal, writeLocal, removeLocal } from '../data/storage.js';
 
 const draftKey = 'sc-admin-advertisements';
@@ -15,7 +20,7 @@ export default function AdvertisementAdmin({ allowed }) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     let active = true;
-    const draft = validateAdvertisements(readLocal(draftKey, [])).value;
+    const draft = validateAdvertisements(readLocal(draftKey, [null])).value;
     if (draft) setCards(draft);
     loadAdvertisements(controller.signal)
       .then((published) => {
@@ -49,6 +54,17 @@ export default function AdvertisementAdmin({ allowed }) {
     );
     setMessage('Unpublished changes');
     setError('');
+  };
+  const changeList = (next, nextSlot) => {
+    setCards(next);
+    setSlot(nextSlot);
+    setMessage('Unpublished changes');
+    setError('');
+  };
+  const move = (offset) => {
+    const next = [...cards];
+    [next[slot], next[slot + offset]] = [next[slot + offset], next[slot]];
+    changeList(next, slot + offset);
   };
   const save = async (publish) => {
     setError('');
@@ -85,7 +101,10 @@ export default function AdvertisementAdmin({ allowed }) {
       <div className="panel-heading">
         <div>
           <h2>Home advertisement cards</h2>
-          <p>Four positions, shown left to right. Disabled cards show an available ad space.</p>
+          <p>
+            Add up to 20 cards and arrange them left to right. Hidden cards never appear on Home.
+            Publish to apply your changes.
+          </p>
         </div>
       </div>
       <div className="sponsor-editor-grid">
@@ -96,71 +115,120 @@ export default function AdvertisementAdmin({ allowed }) {
           }}
         >
           <fieldset disabled={busy}>
-            <label>
-              Card position
-              <select value={slot} onChange={(event) => setSlot(Number(event.target.value))}>
-                {cards.map((_, index) => (
-                  <option key={index} value={index}>
-                    Card {index + 1}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Sponsor name
-              <input
-                value={cards[slot].sponsor}
-                maxLength={60}
-                onChange={(event) => update('sponsor', event.target.value)}
-              />
-            </label>
-            <label>
-              Advertisement title
-              <input
-                value={cards[slot].title}
-                maxLength={80}
-                onChange={(event) => update('title', event.target.value)}
-              />
-            </label>
-            <label>
-              Description
-              <textarea
-                value={cards[slot].description}
-                maxLength={160}
-                rows={3}
-                onChange={(event) => update('description', event.target.value)}
-              />
-            </label>
-            <label>
-              Image URL
-              <input
-                type="url"
-                placeholder="https://example.com/banner.jpg"
-                value={cards[slot].imageUrl}
-                onChange={(event) => update('imageUrl', event.target.value)}
-              />
-            </label>
-            <small>
-              Use a publicly hosted HTTPS image. Square artwork works best. Files are not uploaded
-              here.
-            </small>
-            <label>
-              Destination URL
-              <input
-                type="url"
-                placeholder="https://example.com"
-                value={cards[slot].linkUrl}
-                onChange={(event) => update('linkUrl', event.target.value)}
-              />
-            </label>
-            <label className="sponsor-enabled">
-              <input
-                type="checkbox"
-                checked={cards[slot].enabled}
-                onChange={(event) => update('enabled', event.target.checked)}
-              />{' '}
-              Enable this advertisement
-            </label>
+            <div className="sponsor-editor-actions">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={cards.length >= maxAdvertisements}
+                onClick={() => changeList([...cards, newAdvertisement()], cards.length)}
+              >
+                Add advertisement
+              </Button>
+              {cards[slot] && (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={slot === 0}
+                    onClick={() => move(-1)}
+                  >
+                    Move earlier
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={slot === cards.length - 1}
+                    onClick={() => move(1)}
+                  >
+                    Move later
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      changeList(
+                        cards.filter((_, index) => index !== slot),
+                        Math.max(0, Math.min(slot, cards.length - 2)),
+                      )
+                    }
+                  >
+                    Remove advertisement
+                  </Button>
+                </>
+              )}
+            </div>
+            {cards[slot] ? (
+              <>
+                <label>
+                  Card position
+                  <select value={slot} onChange={(event) => setSlot(Number(event.target.value))}>
+                    {cards.map((card, index) => (
+                      <option key={index} value={index}>
+                        {index + 1}. {card.title || 'Untitled'} ·{' '}
+                        {card.enabled ? 'Visible' : 'Hidden'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Sponsor name
+                  <input
+                    value={cards[slot].sponsor}
+                    maxLength={60}
+                    onChange={(event) => update('sponsor', event.target.value)}
+                  />
+                </label>
+                <label>
+                  Advertisement title
+                  <input
+                    value={cards[slot].title}
+                    maxLength={80}
+                    onChange={(event) => update('title', event.target.value)}
+                  />
+                </label>
+                <label>
+                  Description
+                  <textarea
+                    value={cards[slot].description}
+                    maxLength={160}
+                    rows={3}
+                    onChange={(event) => update('description', event.target.value)}
+                  />
+                </label>
+                <label>
+                  Image URL
+                  <input
+                    type="url"
+                    placeholder="https://example.com/banner.jpg"
+                    value={cards[slot].imageUrl}
+                    onChange={(event) => update('imageUrl', event.target.value)}
+                  />
+                </label>
+                <small>
+                  Use a publicly hosted HTTPS image. Square artwork works best. Files are not
+                  uploaded here.
+                </small>
+                <label>
+                  Destination URL
+                  <input
+                    type="url"
+                    placeholder="https://example.com"
+                    value={cards[slot].linkUrl}
+                    onChange={(event) => update('linkUrl', event.target.value)}
+                  />
+                </label>
+                <label className="sponsor-enabled">
+                  <input
+                    type="checkbox"
+                    checked={cards[slot].enabled}
+                    onChange={(event) => update('enabled', event.target.checked)}
+                  />{' '}
+                  Show this advertisement on Home
+                </label>
+              </>
+            ) : (
+              <p>No advertisements. Add a card to get started.</p>
+            )}
           </fieldset>
           <p role="status">{message}</p>
           {error && (
@@ -180,7 +248,20 @@ export default function AdvertisementAdmin({ allowed }) {
         </form>
         <div className="sponsor-preview">
           <h3>Card preview</h3>
-          <AdvertisementCard card={cards[slot]} index={slot} />
+          {cards[slot] ? (
+            <>
+              {!cards[slot].enabled && <p>Hidden from Home</p>}
+              <AdvertisementCard
+                card={{
+                  ...cards[slot],
+                  enabled: Boolean(cards[slot].title && cards[slot].sponsor),
+                }}
+                index={slot}
+              />
+            </>
+          ) : (
+            <p>No card selected.</p>
+          )}
         </div>
       </div>
     </section>

@@ -73,7 +73,10 @@ export function parseSongTitle(raw) {
 
 export function parseStats(json) {
   if (!json || typeof json !== 'object') throw new Error('Invalid stream stats');
-  const listeners = Number(json.currentlisteners),
+  const listeners =
+      json.currentlisteners == null || String(json.currentlisteners).trim() === ''
+        ? NaN
+        : Number(json.currentlisteners),
     bitrate = Number(json.bitrate),
     uptime = Number(json.streamuptime);
   return {

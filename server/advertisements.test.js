@@ -5,7 +5,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { advertisementsMiddleware } from './advertisements.js';
-import { emptyAdvertisements } from '../src/data/advertisements.js';
+import { emptyAdvertisements, newAdvertisement } from '../src/data/advertisements.js';
 async function call(handler, method = 'GET', body, headers = {}, address = '127.0.0.1') {
   const req = Readable.from(body === undefined ? [] : [JSON.stringify(body)]);
   Object.assign(req, {
@@ -33,8 +33,8 @@ test('advertisements publish across server instances and reject unsafe local wri
     const file = path.join(dir, 'ads.json');
     const admin = advertisementsMiddleware({ file });
     const consumer = advertisementsMiddleware({ file });
-    assert.equal((await call(consumer)).body.cards.length, 4);
-    const cards = emptyAdvertisements();
+    assert.equal((await call(consumer)).body.cards.length, 0);
+    const cards = [newAdvertisement()];
     Object.assign(cards[0], {
       enabled: true,
       title: 'Shop local',
@@ -46,12 +46,14 @@ test('advertisements publish across server instances and reject unsafe local wri
       (await call(admin, 'PUT', { cards }, { origin: 'https://evil.example' })).status,
       403,
     );
-    assert.equal((await call(admin, 'PUT', { cards: [] })).status, 422);
+    assert.equal((await call(admin, 'PUT', { cards: null })).status, 422);
     assert.equal((await call(admin, 'PUT', { cards })).status, 200);
     assert.equal((await call(consumer)).body.cards[0].title, 'Shop local');
     cards[0].enabled = false;
     await call(admin, 'PUT', { cards });
     assert.equal((await call(consumer)).body.cards[0].enabled, false);
+    assert.equal((await call(admin, 'PUT', { cards: [] })).status, 200);
+    assert.deepEqual((await call(consumer)).body.cards, []);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -59,7 +61,7 @@ test('advertisements publish across server instances and reject unsafe local wri
 test('configured accounts gate writes and pass the staff session to Supabase', async () => {
   let allowed = false;
   const requests = [];
-  const cards = emptyAdvertisements();
+  const cards = [newAdvertisement()];
   const handler = advertisementsMiddleware({
     accounts: {
       configured: true,

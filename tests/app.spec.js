@@ -10,6 +10,7 @@ test.beforeEach(async ({ page }) => {
 });
 test('home is responsive and navigation leads to searchable discovery', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Good afternoon, Alex.' })).toBeVisible();
+  await expect(page.locator('.hero-listeners')).toHaveText('3 listening live');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
@@ -21,6 +22,24 @@ test('home is responsive and navigation leads to searchable discovery', async ({
   await expect(page.getByText('No frequencies found')).toBeVisible();
   await page.getByRole('button', { name: 'Reset filters' }).click();
   await expect(page.locator('.station-card')).toHaveCount(7);
+});
+test('home listener count updates and distinguishes zero from unavailable', async ({ page }) => {
+  await page.clock.install();
+  await page.reload();
+  await expect(page.locator('.hero-listeners')).toHaveText('3 listening live');
+  let response = { currentlisteners: 0, streamstatus: 1 };
+  await page.route('**/live-metadata/stats?*', (route) => route.fulfill({ json: response }));
+  await page.clock.fastForward(15000);
+  await expect(page.locator('.hero-listeners')).toHaveText('0 listening live');
+  response = { currentlisteners: null, streamstatus: 1 };
+  await page.clock.fastForward(15000);
+  await expect(page.locator('.hero-listeners')).toHaveText('Listeners unavailable');
+  response = { currentlisteners: 12, streamstatus: 1 };
+  await page.clock.fastForward(15000);
+  await expect(page.locator('.hero-listeners')).toHaveText('12 listening live');
+  await page.route('**/live-metadata/stats?*', (route) => route.fulfill({ status: 503 }));
+  await page.clock.fastForward(15000);
+  await expect(page.locator('.hero-listeners')).toHaveText('Listeners unavailable');
 });
 test('following a station persists across reloads', async ({ page }) => {
   await navigate(page, 'Discover');
@@ -109,7 +128,7 @@ test('theme and profile persist, component gallery reuses the design system', as
   await expect(page.getByRole('button', { name: /admin/i })).toHaveCount(0);
   await page.getByLabel('Appearance', { exact: true }).selectOption('dark');
   await page.getByRole('button', { name: 'Edit profile' }).click();
-  await page.getByLabel('First name').fill('Rohit');
+  await page.getByLabel('Display name').fill('Rohit');
   await page.getByRole('button', { name: 'Save profile' }).click();
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

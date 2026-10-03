@@ -117,6 +117,7 @@ function RadioApp() {
     [genre, setGenre] = useState('All sounds'),
     [language, setLanguage] = useState('All languages'),
     [modal, setModal] = useState(null),
+    [profileSaving, setProfileSaving] = useState(false),
     [toast, setToast] = useState(''),
     [theme, setTheme] = useState(() => readSaved('sc-theme', 'light')),
     [favorites, setFavorites] = useState(() => readSaved('sc-favorites', ['southcity', 'jazz'])),
@@ -169,10 +170,8 @@ function RadioApp() {
       setLibrarySync('idle');
     }
   }
-  const firstName =
-    signedIn && account.profile ? account.profile.displayName.split(/\s+/)[0] : displayName;
-  const fullName =
-    signedIn && account.profile ? account.profile.displayName : `${displayName} Morgan`;
+  const fullName = signedIn && account.profile ? account.profile.displayName : displayName;
+  const firstName = fullName.split(/\s+/)[0];
   const memberLabel = signedIn
     ? account.profile && isStaff(account.profile.role)
       ? roleLabels[account.profile.role]
@@ -261,6 +260,10 @@ function RadioApp() {
     go('Station');
   };
   const play = (s) => {
+    if (!signedIn) {
+      setModal('sign-in');
+      return;
+    }
     s = baseStation(s);
     audio.play(s);
     setHistory((h) => [s.id, ...h.filter((id) => id !== s.id)].slice(0, 12));
@@ -533,38 +536,21 @@ function RadioApp() {
                     <Brand variant="badge" />
                   </div>
                   <div className="hero-content">
-                    <div className="hero-eyebrow">
-                      <LiveBadge /> <span>RIGHT HERE. RIGHT NOW.</span>
-                    </div>
-                    <h2>
-                      Your city. <br />
-                      Your sound.
-                    </h2>
-                    <p>
-                      Real people. Handpicked music.
-                      <br />A frequency that feels like home.
-                    </p>
                     <div className="hero-buttons">
                       <Button onClick={() => play(stations[0])}>
                         <Play size={16} fill="currentColor" /> Start listening
                       </Button>
-                      <button className="hero-explore" onClick={() => go('Live')}>
-                        Explore stations <ArrowUpRight size={16} />
-                      </button>
+                      <div className="hero-listeners">
+                        <Headphones size={16} aria-hidden="true" />
+                        <span>
+                          {live.phase === 'ready' && live.data?.listeners != null
+                            ? `${formatListeners(live.data.listeners)} listening live`
+                            : live.phase === 'idle' || live.phase === 'loading'
+                              ? 'Listeners loading…'
+                              : 'Listeners unavailable'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="hero-listeners">
-                      <Headphones size={14} aria-hidden="true" />
-                      <span>Independent radio. Wherever you are.</span>
-                    </div>
-                  </div>
-                  <div className="hero-caption">
-                    <span className="equalizer">
-                      <i />
-                      <i />
-                      <i />
-                      <i />
-                    </span>{' '}
-                    SOUTH CITY. WORLDWIDE.
                   </div>
                 </section>
               </div>
@@ -1013,7 +999,10 @@ function RadioApp() {
                   <h2>{fullName}</h2>
                   <p>{memberLabel} · SouthCity community</p>
                 </div>
-                <Button variant="secondary" onClick={() => setModal('edit-profile')}>
+                <Button
+                  variant="secondary"
+                  onClick={() => setModal(signedIn ? 'edit-profile' : 'sign-in')}
+                >
                   Edit profile
                 </Button>
               </div>
@@ -1415,24 +1404,22 @@ function RadioApp() {
                 new FormData(e.currentTarget).get('name'),
               );
               if (!name) return;
-              if (signedIn) {
-                try {
-                  await updateDisplayName(name);
-                } catch (error) {
-                  return setToast(error.message);
-                }
-              } else {
-                setDisplayName(name);
-                writeLocal('sc-name', name);
+              if (!signedIn) return setModal('sign-in');
+              if (profileSaving) return;
+              setProfileSaving(true);
+              try {
+                await updateDisplayName(name);
+                setModal(null);
+                setToast('Profile updated in your account');
+              } catch (error) {
+                setToast(error.message);
+              } finally {
+                setProfileSaving(false);
               }
-              setModal(null);
-              setToast(
-                signedIn ? 'Profile updated in your account' : 'Profile updated on this device',
-              );
             }}
           >
             <label className="form-label">
-              {signedIn ? 'Display name' : 'First name'}
+              Display name
               <input
                 name="name"
                 defaultValue={signedIn ? fullName : displayName}
@@ -1441,19 +1428,40 @@ function RadioApp() {
                 autoFocus
               />
             </label>
-            <Button type="submit">Save profile</Button>
+            <Button type="submit" disabled={profileSaving}>
+              {profileSaving ? 'Saving…' : 'Save profile'}
+            </Button>
           </form>
         </Modal>
       )}
       {modal === 'sign-in' && (
         <Modal title="Sign in to SouthCity" onClose={() => setModal(null)}>
           {signedIn ? (
-            <p className="modal-description">You’re signed in as {account.user.email}.</p>
+            <>
+              <p className="modal-description">You’re signed in as {account.user.email}.</p>
+              <Button
+                onClick={() => {
+                  setModal(null);
+                  play(activeStation);
+                }}
+              >
+                Start listening
+              </Button>
+            </>
+          ) : account.phase === 'unavailable' ? (
+            <p className="modal-description" role="alert">
+              Sign-in is required to listen, but accounts are currently unavailable. Please try
+              again later.
+            </p>
+          ) : account.phase === 'idle' || account.phase === 'loading' ? (
+            <p className="modal-description" role="status">
+              Checking your sign-in…
+            </p>
           ) : (
             <>
               <p className="modal-description">
-                We’ll email you a one-time link, so there’s no password to remember. New here? The
-                same link creates your account.
+                Sign in to listen and save your profile. We’ll email you a one-time link, so there’s
+                no password to remember. New here? The same link creates your account.
               </p>
               <SignInForm workspace="app" />
             </>
@@ -1642,8 +1650,8 @@ function AccountCard({ account, librarySync, onSignIn, onSignOut, onRetry }) {
         <div>
           <strong>Keep your library everywhere</strong>
           <p>
-            Sign in to save favorites and followed shows to your account. Anything you’ve saved in
-            this browser comes with you.
+            Sign in to listen and save favorites and followed shows to your account. Anything you’ve
+            saved in this browser comes with you.
           </p>
         </div>
         <Button onClick={onSignIn}>Sign in</Button>

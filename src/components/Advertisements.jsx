@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUpRight, Image } from 'lucide-react';
-import { SectionHeading } from './ui.jsx';
+import { Modal, SectionHeading } from './ui.jsx';
 import {
   advertisementsPath,
   emptyAdvertisements,
@@ -34,13 +34,13 @@ export async function publishAdvertisements(cards) {
   if (!value) throw new Error('The server did not confirm the advertisements.');
   return value;
 }
-export function AdvertisementCard({ card, index }) {
+export function AdvertisementCard({ card, index, onOpen }) {
   const [failedImage, setFailedImage] = useState('');
   const imageUrl = publicAdUrl(card.imageUrl);
   const linkUrl = publicAdUrl(card.linkUrl);
   const enabled = card.enabled && card.title && card.sponsor;
-  return (
-    <article className="sponsor-card">
+  const content = (
+    <>
       <div className={`sponsor-art sponsor-art-${index % 4}`}>
         {enabled && imageUrl && failedImage !== imageUrl ? (
           <img
@@ -60,7 +60,26 @@ export function AdvertisementCard({ card, index }) {
       </div>
       <h3>{enabled ? card.title : `Advertisement space ${index + 1}`}</h3>
       <p>{enabled ? card.description || card.sponsor : 'Available for your next campaign.'}</p>
-      {enabled && linkUrl && (
+    </>
+  );
+  return (
+    <article className="sponsor-card">
+      {onOpen ? (
+        <button
+          className="sponsor-open"
+          aria-label={`Open ${enabled ? card.title : `advertisement space ${index + 1}`}`}
+          aria-haspopup="dialog"
+          onClick={onOpen}
+        >
+          {content}
+          <span className="sponsor-expand" aria-hidden="true">
+            <ArrowUpRight size={16} />
+          </span>
+        </button>
+      ) : (
+        content
+      )}
+      {!onOpen && enabled && linkUrl && (
         <a
           href={linkUrl}
           target="_blank"
@@ -76,6 +95,7 @@ export function AdvertisementCard({ card, index }) {
 }
 export default function Advertisements() {
   const [cards, setCards] = useState(emptyAdvertisements);
+  const [selected, setSelected] = useState(null);
   useEffect(() => {
     let stopped = false;
     let controller;
@@ -104,14 +124,30 @@ export default function Advertisements() {
       document.removeEventListener('visibilitychange', refresh);
     };
   }, []);
+  const visible = cards.filter((card) => card.enabled);
+  const selectedVisible =
+    selected && visible.some((card) => JSON.stringify(card) === JSON.stringify(selected.card));
+  if (!visible.length) return null;
   return (
     <section className="home-advertisement" aria-label="Advertisements">
       <SectionHeading title="Advertisements" subtitle="Space for brands on your frequency." />
       <div className="station-grid sponsor-grid">
-        {cards.map((card, index) => (
-          <AdvertisementCard key={index} card={card} index={index} />
+        {visible.map((card, index) => (
+          <AdvertisementCard
+            key={index}
+            card={card}
+            index={index}
+            onOpen={() => setSelected({ card, index })}
+          />
         ))}
       </div>
+      {selectedVisible && (
+        <Modal title="Advertisement" onClose={() => setSelected(null)}>
+          <div className="advertisement-detail">
+            <AdvertisementCard card={selected.card} index={selected.index} />
+          </div>
+        </Modal>
+      )}
     </section>
   );
 }

@@ -1,13 +1,14 @@
 export const advertisementsPath = '/api/advertisements';
-export const emptyAdvertisements = () =>
-  Array.from({ length: 4 }, () => ({
-    title: '',
-    sponsor: '',
-    description: '',
-    imageUrl: '',
-    linkUrl: '',
-    enabled: false,
-  }));
+export const maxAdvertisements = 20;
+export const newAdvertisement = () => ({
+  title: '',
+  sponsor: '',
+  description: '',
+  imageUrl: '',
+  linkUrl: '',
+  enabled: false,
+});
+export const emptyAdvertisements = () => [];
 
 export function publicAdUrl(value) {
   if (typeof value !== 'string' || value.length > 1000) return '';
@@ -20,8 +21,8 @@ export function publicAdUrl(value) {
 }
 
 export function validateAdvertisements(input) {
-  if (!Array.isArray(input) || input.length !== 4)
-    return { error: 'Provide exactly four advertisement slots.' };
+  if (!Array.isArray(input) || input.length > maxAdvertisements)
+    return { error: `Provide up to ${maxAdvertisements} advertisements.` };
   const cards = [];
   for (const [index, card] of input.entries()) {
     if (!card || typeof card !== 'object' || typeof card.enabled !== 'boolean')

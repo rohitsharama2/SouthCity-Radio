@@ -1,9 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { emptyAdvertisements, validateAdvertisements, publicAdUrl } from './advertisements.js';
+import {
+  emptyAdvertisements,
+  newAdvertisement,
+  validateAdvertisements,
+  publicAdUrl,
+} from './advertisements.js';
 test('ad slots validate required copy, limits, and safe destinations', () => {
-  const cards = emptyAdvertisements();
-  assert.equal(validateAdvertisements(cards).value.length, 4);
+  const cards = [newAdvertisement()];
+  assert.equal(validateAdvertisements(cards).value.length, 1);
   cards[0].enabled = true;
   assert.ok(validateAdvertisements(cards).error);
   Object.assign(cards[0], {
@@ -25,6 +30,7 @@ test('ad slots validate required copy, limits, and safe destinations', () => {
   cards[0].linkUrl = '';
   cards[0].title = 'x'.repeat(81);
   assert.ok(validateAdvertisements(cards).error);
-  assert.ok(validateAdvertisements([]).error);
+  assert.deepEqual(validateAdvertisements(emptyAdvertisements()).value, []);
+  assert.ok(validateAdvertisements(Array.from({ length: 21 }, newAdvertisement)).error);
   assert.ok(validateAdvertisements(null).error);
 });

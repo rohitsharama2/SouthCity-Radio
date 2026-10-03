@@ -13,6 +13,7 @@ export function publishedContentMiddleware({
   defaults,
   validate,
   migration,
+  maxBodyBytes = 20000,
 } = {}) {
   const missingTable = `Content storage is not ready. Run ${migration}.`;
   const config = accounts?.configured ? accounts.publicConfig : null;
@@ -88,7 +89,7 @@ export function publishedContentMiddleware({
         let body = '';
         for await (const chunk of req) {
           body += chunk;
-          if (body.length > 20000) return send(413, { error: 'Request too large.' });
+          if (body.length > maxBodyBytes) return send(413, { error: 'Request too large.' });
         }
         input = JSON.parse(body);
       } catch {
