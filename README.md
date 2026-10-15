@@ -89,6 +89,39 @@ What differs from the web app:
 
 The stream is plain `http://`, so the app is served from `http://localhost` and allows cleartext traffic. Switch both back once the stream has HTTPS.
 
+### Signed APK and Play Store bundle
+
+Use the same JDK 21, Android SDK, and `VITE_SOUTHCITY_SERVER` setup above. The release commands sign the app with your upload key. For an existing Play listing, use its registered upload key. For a new listing, create a key once (the command prompts for passwords):
+
+```sh
+keytool -genkeypair -v -keystore "$HOME/southcity-upload.jks" -alias southcity-upload -keyalg RSA -keysize 2048 -validity 10000
+cp android/keystore.properties.example android/keystore.properties
+```
+
+Edit `android/keystore.properties` with the absolute keystore path, alias, and passwords. Back up the keystore and passwords securely; reuse them for future releases. Keystores and the real properties file are ignored by Git. Do not put signing passwords in `VITE_*` variables. Java properties files require literal backslashes to be escaped; use forward slashes in paths.
+
+```sh
+# Set a version code higher than every previous Play upload.
+export ANDROID_VERSION_CODE=3
+export ANDROID_VERSION_NAME=1.0.2
+
+npm run android:release      # Signed APK and AAB in one build
+# Or build just one:
+npm run android:apk:release
+npm run android:aab
+```
+
+Without version overrides, builds use version code `2` / version name `1.0.1`. The scripts rebuild the listener app, sync Capacitor, validate signing configuration, and run Gradle. Missing signing configuration fails the release build; it never falls back to the debug key. `npm run android:apk` remains the debug/testing command.
+
+| Artifact                           | Output                                                     |
+| ---------------------------------- | ---------------------------------------------------------- |
+| Signed APK for direct installation | `android/app/build/outputs/apk/release/app-release.apk`    |
+| Signed AAB for Play Console upload | `android/app/build/outputs/bundle/release/app-release.aab` |
+
+For CI, supply `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD` as environment secrets instead of the properties file. Paths are absolute or relative to `android/`. Environment values take precedence over the file.
+
+Upload the AAB to your app's testing or production release in Play Console and configure [Play App Signing](https://developer.android.com/studio/publish/app-signing). An AAB cannot be installed directly. The APK uses your upload key; if Play uses a different app signing key, it cannot update a Play-installed copy. A release APK also cannot update a debug-key-signed installation. Building these files does not submit the app or complete Play's listing, policy declarations, testing requirements, or review.
+
 ## Production identity
 
 The production domain is **radiosouthcity.com** and the administrative/contact email is **admin@radiosouthcity.com**. The previous Gmail address is being retired.

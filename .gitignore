@@ -7,3 +7,8 @@ dist/
 playwright-report/
 test-results/
 .local/
+
+# Android release signing secrets
+*.jks
+*.keystore
+android/keystore.properties

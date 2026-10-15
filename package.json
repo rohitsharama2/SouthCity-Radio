@@ -15,7 +15,10 @@
     "format": "prettier --write src server scripts tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
     "format:check": "prettier --check src server scripts tests docs skills README.md AGENTS.md playwright.config.js vite.config.js package.json index.html",
     "dev:app": "vite",
-    "dev:admin": "vite --mode admin"
+    "dev:admin": "vite --mode admin",
+    "android:apk:release": "node scripts/android-release.js apk",
+    "android:aab": "node scripts/android-release.js aab",
+    "android:release": "node scripts/android-release.js all"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",

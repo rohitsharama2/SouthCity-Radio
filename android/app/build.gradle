@@ -1,5 +1,33 @@
 apply plugin: 'com.android.application'
 
+// Signing values are local only, or supplied by CI environment variables.
+def releaseProperties = new Properties()
+def releasePropertiesFile = rootProject.file('keystore.properties')
+if (releasePropertiesFile.exists()) {
+    releasePropertiesFile.withInputStream { releaseProperties.load(it) }
+}
+def signingValue = { name, envName -> System.getenv(envName) ?: releaseProperties.getProperty(name) }
+def releaseStore = signingValue('storeFile', 'ANDROID_KEYSTORE_PATH')
+def releaseStorePassword = signingValue('storePassword', 'ANDROID_KEYSTORE_PASSWORD')
+def releaseAlias = signingValue('keyAlias', 'ANDROID_KEY_ALIAS')
+def releaseKeyPassword = signingValue('keyPassword', 'ANDROID_KEY_PASSWORD')
+def releaseCode = System.getenv('ANDROID_VERSION_CODE') ?: '2'
+def releaseName = System.getenv('ANDROID_VERSION_NAME') ?: '1.0.1'
+if (!(releaseCode ==~ /[1-9][0-9]*/) || releaseCode.toBigInteger() > 2100000000) {
+    throw new GradleException('ANDROID_VERSION_CODE must be an integer from 1 to 2100000000.')
+}
+
+tasks.register('validateReleaseConfiguration') {
+    doLast {
+        if (!releaseStore || !releaseStorePassword || !releaseAlias || !releaseKeyPassword) {
+            throw new GradleException('Release signing is missing. Configure android/keystore.properties (see keystore.properties.example) or ANDROID_KEYSTORE_* / ANDROID_KEY_* environment variables.')
+        }
+        if (!rootProject.file(releaseStore).isFile()) {
+            throw new GradleException('Release keystore file does not exist. Check storeFile / ANDROID_KEYSTORE_PATH.')
+        }
+    }
+}
+
 android {
     namespace = "com.southcity.radio"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +35,8 @@ android {
         applicationId "com.southcity.radio"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.0.1"
+        versionCode releaseCode.toInteger()
+        versionName releaseName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +44,17 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (releaseStore) storeFile rootProject.file(releaseStore)
+            storePassword releaseStorePassword
+            keyAlias releaseAlias
+            keyPassword releaseKeyPassword
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -51,4 +88,11 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+// Direct Gradle release builds must also fail rather than emit unsigned artifacts.
+tasks.configureEach { task ->
+    if (task.name == 'preReleaseBuild') {
+        task.dependsOn('validateReleaseConfiguration')
+    }
 }
