@@ -79,7 +79,7 @@ function consumeRedirect() {
 // The Android app has no web address, so sign-in links and Google return to it through this
 // deep link (see AndroidManifest.xml). Its PKCE verifier is in the app's own storage, so the
 // app finishes the sign-in itself.
-export const appAuthRedirect = 'com.southcity.radio://auth';
+export const appAuthRedirect = 'com.radiosouthcity://auth';
 async function listenForAppLinks() {
   const [{ App }, { Browser }] = await Promise.all([
     import('@capacitor/app'),

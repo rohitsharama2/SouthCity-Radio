@@ -1,4 +1,4 @@
-package com.southcity.radio;
+package com.radiosouthcity;
 
 import com.getcapacitor.BridgeActivity;
 

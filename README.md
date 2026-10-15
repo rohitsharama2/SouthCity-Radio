@@ -84,7 +84,7 @@ What differs from the web app:
 
 - **No admin.** Admin links and `/#admin` are disabled in this build (`vite build --mode android`).
 - **Server by address.** API calls go to `VITE_SOUTHCITY_SERVER` through native HTTP (`CapacitorHttp`), which is not subject to CORS. Published SouthCity Live settings reach the app like the web app.
-- **Sign-in returns through a deep link.** Email links and Google sign-in redirect to `com.southcity.radio://auth`, which opens the app, and the app completes the sign-in. Google opens in the system browser, because Google refuses sign-in inside app WebViews. The link must be opened on the phone that requested it.
+- **Sign-in returns through a deep link.** Email links and Google sign-in redirect to `com.radiosouthcity://auth`, which opens the app, and the app completes the sign-in. Google opens in the system browser, because Google refuses sign-in inside app WebViews. The link must be opened on the phone that requested it.
 - **Media notification.** While a station plays, a foreground media service shows a notification and lock-screen controls with play/pause and stop (`@capgo/capacitor-media-session`). Stop pauses and removes the notification. Song titles in it refresh only while the app is open, because metadata polling pauses in the background.
 
 The stream is plain `http://`, so the app is served from `http://localhost` and allows cleartext traffic. Switch both back once the stream has HTTPS.
@@ -155,7 +155,7 @@ Listening requires a signed-in Supabase account. Play buttons open sign-in for g
    Roles are `listener` (default), `dj`, `station_manager`, and `admin`. Roles can only be changed here, not from the app.
 
 6. Run [`supabase/migrations/20260926000000_live_station.sql`](supabase/migrations/20260926000000_live_station.sql). It stores SouthCity Live's published settings: anyone can read them, and only station managers and administrators can change them.
-7. For the [hosted server](#hosted-server) and the Android app, add these Redirect URLs: `https://<name>.onrender.com/**` and `com.southcity.radio://auth`.
+7. For the [hosted server](#hosted-server) and the Android app, add these Redirect URLs: `https://<name>.onrender.com/**` and `com.radiosouthcity://auth`.
 8. Before real listeners sign up, connect an SMTP provider (below). The built-in sender allows only a few emails per hour.
 
 **Keys:** the project URL and publishable key are public by design. The app reads them at runtime from `/api/auth-config` and they are not built into the bundle. **Never** put the `service_role`/secret key in `.env`. The server refuses to start accounts with one, because that key would be sent to browsers.

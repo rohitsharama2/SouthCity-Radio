@@ -37,7 +37,7 @@ Evidence: [AudioProvider.jsx](../src/components/AudioProvider.jsx), [useLiveStre
 
 ### Accounts and library
 
-The app requests public account configuration from `/api/auth-config`, then initializes the Supabase SDK only when that configuration is usable. Email links use PKCE; Google is offered if the account provider advertises it. On Android, sign-in returns through `com.southcity.radio://auth` and the app exchanges the code for a session.
+The app requests public account configuration from `/api/auth-config`, then initializes the Supabase SDK only when that configuration is usable. Email links use PKCE; Google is offered if the account provider advertises it. On Android, sign-in returns through `com.radiosouthcity://auth` and the app exchanges the code for a session.
 
 The client talks directly to Supabase for its own profile and follows. SQL row-level security scopes those records to the authenticated user; column grants prevent clients from editing their own role. Preferences and listening history remain in local browser/app storage. Account synchronization is separate from the server's public-content publication flow.
 

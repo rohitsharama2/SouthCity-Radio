@@ -29,10 +29,10 @@ tasks.register('validateReleaseConfiguration') {
 }
 
 android {
-    namespace = "com.southcity.radio"
+    namespace = "com.radiosouthcity"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.southcity.radio"
+        applicationId "com.radiosouthcity"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode releaseCode.toInteger()
