@@ -162,16 +162,16 @@ function Website() {
           <span>OUR COMMUNITY</span>
         </div>
         <section id="about" className="web-wrap web-about web-section">
-          <div>
+          <div className="web-story-heading">
             <p className="web-eyebrow">01 / OUR STORY</p>
             <h2>
               More than neighbours.
               <br />
               <em>A community on air.</em>
             </h2>
-            <div className="web-story-logo">
-              <Brand variant="badge" />
-            </div>
+          </div>
+          <div className="web-story-logo">
+            <Brand variant="badge" />
           </div>
           <div>
             <p className="web-large-copy">Behind every door is a story worth sharing.</p>

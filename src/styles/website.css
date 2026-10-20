@@ -231,11 +231,18 @@ p {
 .web-about {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 80px;
+  gap: 36px 80px;
+  align-items: center;
+}
+.web-story-heading {
+  grid-column: 1 / -1;
 }
 .web-story-logo {
-  width: min(220px, 100%);
-  margin-top: 28px;
+  width: min(260px, 100%);
+  justify-self: center;
+}
+.web-story-logo .brand {
+  display: block;
 }
 .web-story-logo svg {
   display: block;
