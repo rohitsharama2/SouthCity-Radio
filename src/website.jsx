@@ -170,10 +170,7 @@ function Website() {
               <em>A community on air.</em>
             </h2>
           </div>
-          <div className="web-story-logo">
-            <Brand variant="badge" />
-          </div>
-          <div>
+          <div className="web-story-copy">
             <p className="web-large-copy">Behind every door is a story worth sharing.</p>
             <p>
               Radio South City brings those stories together. The song you love to sing. The poem
@@ -187,6 +184,9 @@ function Website() {
             <a className="web-text-link" href="#contribute">
               There’s a place for your voice here <ArrowRight size={18} />
             </a>
+          </div>
+          <div className="web-story-logo">
+            <Brand variant="badge" />
           </div>
         </section>
         <section id="contribute" className="web-contribute">

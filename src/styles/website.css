@@ -230,16 +230,22 @@ p {
 }
 .web-about {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 36px 80px;
-  align-items: center;
+  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-areas: 'heading logo' 'copy logo';
+  gap: 26px 80px;
+  align-items: start;
 }
 .web-story-heading {
-  grid-column: 1 / -1;
+  grid-area: heading;
+}
+.web-story-copy {
+  grid-area: copy;
 }
 .web-story-logo {
-  width: min(260px, 100%);
+  grid-area: logo;
+  width: min(320px, 100%);
   justify-self: center;
+  align-self: center;
 }
 .web-story-logo .brand {
   display: block;
@@ -639,6 +645,13 @@ details p {
   .web-faq {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+  .web-about {
+    grid-template-areas: 'heading' 'copy' 'logo';
+  }
+  .web-story-logo {
+    width: min(240px, 80%);
+    margin-top: 8px;
   }
   .web-section-heading {
     align-items: start;
