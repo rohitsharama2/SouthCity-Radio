@@ -233,6 +233,15 @@ p {
   grid-template-columns: 1fr 1fr;
   gap: 80px;
 }
+.web-story-logo {
+  width: min(220px, 100%);
+  margin-top: 28px;
+}
+.web-story-logo svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 .web-about p:not(.web-eyebrow),
 .web-community-notes p {
   color: var(--website-muted);

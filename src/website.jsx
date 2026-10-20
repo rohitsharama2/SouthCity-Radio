@@ -169,6 +169,9 @@ function Website() {
               <br />
               <em>A community on air.</em>
             </h2>
+            <div className="web-story-logo">
+              <Brand variant="badge" />
+            </div>
           </div>
           <div>
             <p className="web-large-copy">Behind every door is a story worth sharing.</p>
