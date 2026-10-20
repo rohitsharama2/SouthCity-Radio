@@ -16,6 +16,14 @@ export default defineConfig(({ mode }) => {
       throw new Error('Set VITE_SOUTHCITY_SERVER in .env to the hosted server (https://...).');
   }
   return {
+    build: {
+      rollupOptions: {
+        input:
+          mode === 'android'
+            ? { app: 'index.html' }
+            : { app: 'index.html', website: 'website/index.html' },
+      },
+    },
     // Serves account config, publishes SouthCity Live settings, and proxies its metadata.
     plugins: [
       accountsServer(accounts),

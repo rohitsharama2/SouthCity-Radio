@@ -4,7 +4,25 @@
 
 This repository contains a working **React web prototype**, optimized for mobile and desktop. It is not a native iOS/Android application or a connected Centova Cast management client. **SouthCity Live** plays the real station broadcast; the other stations are samples. Most administrative controls save local drafts. SouthCity Live settings and Home advertisements have explicit publishing flows.
 
-## Run locally
+## Community website
+
+The resident-facing presentation website is available at **http://localhost:5180/website/**
+when the development server is running, and at `/website/` in production.
+The listener app remains at `/` and operations at `/#admin`.
+
+The website uses the supplied Radio South City PDF for station information, contact details,
+submission guidelines and the community WhatsApp link. The park and tower photographs
+come from Carambiah & George's L&T South City project archive; the pond photo comes
+from the PDF and is credited to Sandhya Ashwin. Image provenance is documented in
+`docs/WEBSITE_IMAGES.md`. Source: `src/website.jsx`, styling:
+`src/styles/website.css`, entry: `website/index.html`.
+
+WhatsApp and email actions open the visitor's messaging application; they do not submit
+anything automatically. The website links to the existing listener rather than adding a
+second audio player. No event dates, team roster, app download or broadcast status are
+invented. Confirm current announcements with the station team.
+
+## Running the project
 
 Requires Node.js 20.19+ or 22.12+ and npm.
 
