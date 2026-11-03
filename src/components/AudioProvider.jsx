@@ -11,9 +11,11 @@ export function AudioProvider({ children }) {
   access.current = mayListen;
   const audio = useRef(null),
     timer = useRef(null),
+    recoveryTimer = useRef(null),
     selected = useRef(null);
   const attempt = useRef(0),
-    wantsPlayback = useRef(false);
+    wantsPlayback = useRef(false),
+    recoveryAttempts = useRef(0);
   const [station, setStation] = useState(null),
     [status, setStatus] = useState('paused'),
     // System media controls show from the first play until the listener stops from them.
@@ -32,23 +34,62 @@ export function AudioProvider({ children }) {
     pause();
     setSession(false);
   }
+  function scheduleRecovery() {
+    const player = audio.current;
+    if (!player || !selected.current || !wantsPlayback.current || !navigator.onLine) return;
+    clearTimeout(recoveryTimer.current);
+    if (recoveryAttempts.current >= 3) {
+      setStatus('connection error');
+      return;
+    }
+    recoveryTimer.current = setTimeout(
+      () => {
+        if (!wantsPlayback.current || !selected.current || !navigator.onLine) return;
+        recoveryAttempts.current += 1;
+        const currentAttempt = ++attempt.current;
+        player.load();
+        setStatus('connecting');
+        player.play().catch((error) => {
+          if (
+            currentAttempt === attempt.current &&
+            wantsPlayback.current &&
+            error.name !== 'AbortError'
+          )
+            scheduleRecovery();
+        });
+      },
+      Math.min(1000 * 2 ** recoveryAttempts.current, 4000),
+    );
+  }
   useEffect(() => {
     const element = new Audio();
     element.preload = 'none';
     audio.current = element;
     const listeners = {
       playing: () => {
-        if (wantsPlayback.current && !element.paused) setStatus('playing');
+        if (wantsPlayback.current && !element.paused) {
+          recoveryAttempts.current = 0;
+          clearTimeout(recoveryTimer.current);
+          setStatus('playing');
+        }
       },
       waiting: () => {
-        if (wantsPlayback.current) setStatus('buffering');
+        if (wantsPlayback.current) {
+          setStatus('buffering');
+          scheduleRecovery();
+        }
+      },
+      stalled: () => {
+        if (wantsPlayback.current) scheduleRecovery();
       },
       pause: () => {
         if (!wantsPlayback.current) setStatus('paused');
       },
       error: () => {
-        if (wantsPlayback.current && element.error)
+        if (wantsPlayback.current && element.error) {
           setStatus(navigator.onLine ? 'connection error' : 'offline');
+          scheduleRecovery();
+        }
       },
       ended: () => {
         if (element.ended) {
@@ -59,9 +100,18 @@ export function AudioProvider({ children }) {
     };
     Object.entries(listeners).forEach(([name, fn]) => element.addEventListener(name, fn));
     const offline = () => {
+      clearTimeout(recoveryTimer.current);
       if (wantsPlayback.current) setStatus('offline');
     };
+    const online = () => {
+      if (wantsPlayback.current) scheduleRecovery();
+    };
+    const visible = () => {
+      if (document.visibilityState === 'visible' && wantsPlayback.current) scheduleRecovery();
+    };
     window.addEventListener('offline', offline);
+    window.addEventListener('online', online);
+    document.addEventListener('visibilitychange', visible);
     return () => {
       attempt.current += 1;
       wantsPlayback.current = false;
@@ -70,7 +120,10 @@ export function AudioProvider({ children }) {
       element.removeAttribute('src');
       element.load();
       window.removeEventListener('offline', offline);
+      window.removeEventListener('online', online);
+      document.removeEventListener('visibilitychange', visible);
       clearTimeout(timer.current);
+      clearTimeout(recoveryTimer.current);
     };
   }, []);
   useEffect(() => {
@@ -83,6 +136,7 @@ export function AudioProvider({ children }) {
     setSleep(0);
     audio.current?.removeAttribute('src');
     audio.current?.load();
+    clearTimeout(recoveryTimer.current);
     selected.current = null;
   }, [mayListen]);
   useEffect(() => {
@@ -112,6 +166,8 @@ export function AudioProvider({ children }) {
     if (!player || !next) return;
     const currentAttempt = ++attempt.current;
     wantsPlayback.current = true;
+    recoveryAttempts.current = 0;
+    clearTimeout(recoveryTimer.current);
     setSession(true);
     // A republished stream address for the same station also needs a fresh source.
     if (next.id !== selected.current?.id || next.stream !== selected.current?.stream) {
@@ -132,6 +188,7 @@ export function AudioProvider({ children }) {
         error.name !== 'AbortError'
       ) {
         setStatus(navigator.onLine ? 'connection error' : 'offline');
+        scheduleRecovery();
       }
     }
   }
