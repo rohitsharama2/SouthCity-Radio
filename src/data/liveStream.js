@@ -114,6 +114,16 @@ export function parseStats(json) {
 }
 
 export function parseHistory(json, limit = 8) {
+  if (json && !Array.isArray(json) && Array.isArray(json.song_history)) {
+    return json.song_history
+      .filter((item) => item?.song && Number.isFinite(item.played_at))
+      .slice(0, limit)
+      .map((item) => ({
+        title: item.song.title || null,
+        artist: item.song.artist || null,
+        playedAt: item.played_at * 1000,
+      }));
+  }
   if (!Array.isArray(json)) return [];
   return json
     .filter((item) => item && typeof item.title === 'string' && Number.isFinite(item.playedat))

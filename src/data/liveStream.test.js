@@ -77,6 +77,15 @@ test('parses AzuraCast Now Playing responses and derives its public API URL', ()
   );
 });
 
+test('parses AzuraCast song history from the Now Playing response', () => {
+  assert.deepEqual(
+    parseHistory({
+      song_history: [{ played_at: 1700000000, song: { title: 'Past Song', artist: 'DJ' } }],
+    }),
+    [{ playedAt: 1700000000000, title: 'Past Song', artist: 'DJ' }],
+  );
+});
+
 test('splits artist and title on the first separator', () => {
   assert.deepEqual(parseSongTitle('Arijit Singh - Tum Hi Ho - Live'), {
     artist: 'Arijit Singh',

@@ -209,7 +209,7 @@ async function fetchMetadata(requestPath, { config, request }) {
   try {
     const azuraUrl = azuraNowPlayingUrl(streamUrl);
     let target;
-    if (requestPath === liveEndpoints.stats) {
+    if (requestPath === liveEndpoints.stats || requestPath === liveEndpoints.history) {
       if (azuraUrl) target = new URL(azuraUrl);
       else {
         const stream = new URL(streamUrl);
