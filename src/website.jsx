@@ -12,6 +12,9 @@ import {
   MessageCircle,
   Headphones,
   Plus,
+  CalendarDays,
+  Sparkles,
+  ArrowLeft,
 } from 'lucide-react';
 import { Brand } from './components/ui.jsx';
 import './styles/tokens.css';
@@ -50,6 +53,71 @@ const faqs = [
     'WhatsApp 91031 47596 or email admin@radiosouthcity.com. Messages only, please — no calls.',
   ],
 ];
+const team = [
+  [
+    'Anu',
+    'anu.jpeg',
+    'Creative by instinct, curious by nature, and a people-person at heart. A teacher, gardener, creator of skits, lover of children, collector of conversations and now an RJ, Anu wears many hats with her own colourful flair. She believes in balancing it all, creating constantly, laughing loudly, and growing beautifully.',
+  ],
+  [
+    'Udayan Mukherjee',
+    'udayan.jpeg',
+    'An Army veteran from the golden era of radio. Even with the onslaught of TV and internet, radio was at times the only companion from the icy heights of Siachen to the sizzling sands of Rajasthan. Time to hear you all through Radio South City.',
+  ],
+  [
+    'Vinu Iyer',
+    'vinu.jpeg',
+    'Stage performer, marketing strategist, and resident of B6 502, Vinu believes every great broadcast begins with a great beat and an authentic voice. Behind the mic as your friendly host and dost, he blends crisp presentation with deep musical soul.',
+  ],
+  [
+    'Deepika Lal Salwani',
+    'deepika.jpeg',
+    'Driven by advertising and business research, Deepika is a yarn artist, lover of all things handmade, and avid reader. She puts both her left and right brain to work crafting the design, branding, and PR for Radio South City.',
+  ],
+  [
+    'Ramyashree',
+    'ramyashree.jpeg',
+    'Volunteer is the word that suits her. She takes the lead in planning parties, get-togethers and trips, teaches rural students, and now volunteers with Radio South City in designing programmes for listeners.',
+  ],
+  [
+    'Rohit Sharma',
+    'rohit.jpeg',
+    'As a volunteer developer, Rohit took end-to-end ownership of building the Radio South City website and mobile app, translating the organisation’s vision into user-friendly digital products and stronger community engagement.',
+  ],
+  [
+    'Priyadarshini',
+    'priyadarshini.jpeg',
+    'CEO and COO of her home, Priyadarshini is passionate about travel planning, punctuality and detail. An avid reader, baker, travel writer and shloka teacher, she has now added talk-show host to her collection of hats.',
+  ],
+  [
+    'Nisha',
+    'nisha.jpeg',
+    'A marketer with a restless creative streak and a serious soft spot for good food. Nisha shapes stories, brands and campaigns, and spends her free time cooking, painting, or planning trips that become the next marketing idea.',
+  ],
+];
+const events = [
+  [
+    'NOV',
+    '16',
+    'Community open mic',
+    'Bring a song, story, poem or idea to share with neighbours.',
+    'Coming soon',
+  ],
+  [
+    'DEC',
+    '07',
+    'Radio South City gathering',
+    'An evening of conversation, music and familiar voices.',
+    'Coming soon',
+  ],
+  [
+    'JAN',
+    '18',
+    'Stories from South City',
+    'A community showcase for the people and places that make home special.',
+    'Coming soon',
+  ],
+];
 function External({ href, children, className = '' }) {
   return (
     <a href={href} className={className} target="_blank" rel="noreferrer">
@@ -58,8 +126,200 @@ function External({ href, children, className = '' }) {
     </a>
   );
 }
+function PageIntro({ eyebrow, title, children }) {
+  return (
+    <section className="web-inner-hero web-wrap">
+      <a className="web-back" href="#">
+        <ArrowLeft size={16} /> Back home
+      </a>
+      <p className="web-eyebrow">{eyebrow}</p>
+      <h1>{title}</h1>
+      <p className="web-lead">{children}</p>
+    </section>
+  );
+}
+function StoryPage() {
+  return (
+    <>
+      <PageIntro
+        eyebrow="01 / OUR STORY"
+        title={
+          <>
+            The voices behind <em>the sound.</em>
+          </>
+        }
+      >
+        Radio South City is made by residents who believe a neighbourhood becomes a community when
+        people make time to listen to one another.
+      </PageIntro>
+      <section className="web-wrap web-section web-team">
+        <div className="web-team-intro">
+          <Sparkles size={28} />
+          <p>Different lives. Different passions. One shared frequency.</p>
+        </div>
+        <div className="web-team-grid">
+          {team.map(([name, image, bio]) => (
+            <article className="web-person" key={name}>
+              <img src={`/website/images/${image}`} alt={`${name}, Radio South City team member`} />
+              <div>
+                <p className="web-eyebrow">RADIO SOUTH CITY</p>
+                <h2>{name}</h2>
+                <p>{bio}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+function EventsPage() {
+  return (
+    <>
+      <PageIntro
+        eyebrow="02 / COMMUNITY CALENDAR"
+        title={
+          <>
+            Make a date with <em>your neighbours.</em>
+          </>
+        }
+      >
+        A simple calendar for the moments that bring South City together. Dates and details here are
+        local planning notes until confirmed by the station team.
+      </PageIntro>
+      <section className="web-wrap web-section web-events">
+        <div className="web-calendar-head">
+          <CalendarDays size={34} />
+          <div>
+            <p className="web-eyebrow">UP NEXT</p>
+            <h2>Gather. Share. Be heard.</h2>
+          </div>
+        </div>
+        <div className="web-event-list">
+          {events.map(([month, day, title, copy, status]) => (
+            <article className="web-event" key={title}>
+              <div className="web-date">
+                <span>{month}</span>
+                <strong>{day}</strong>
+              </div>
+              <div>
+                <p className="web-eyebrow">{status}</p>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </div>
+              <a className="web-text-link" href={`#${encodeURIComponent(title)}`}>
+                Details <ArrowRight size={17} />
+              </a>
+            </article>
+          ))}
+        </div>
+        <p className="web-fine-print">
+          Event dates, venues and registration details will be updated here once confirmed. Join the
+          community WhatsApp group for announcements.
+        </p>
+      </section>
+    </>
+  );
+}
+function FaqPage() {
+  return (
+    <>
+      <PageIntro
+        eyebrow="03 / GOOD TO KNOW"
+        title={
+          <>
+            Questions welcome. <em>Answers too.</em>
+          </>
+        }
+      >
+        Everything you need to know about listening, sharing a recording and getting involved with
+        Radio South City.
+      </PageIntro>
+      <section className="web-wrap web-section web-faq web-faq-page">
+        <div>
+          <h2>Let’s make it easy.</h2>
+          <p>Still curious? We’re a message away.</p>
+          <External href={whatsapp} className="web-text-link">
+            Message the team
+          </External>
+          <External
+            href={message('Hello Radio South City! I would like to submit an MP3 recording.')}
+            className="web-button web-faq-submit"
+          >
+            Send your recording
+          </External>
+          <External href={community} className="web-text-link web-faq-community">
+            Join the community
+          </External>
+        </div>
+        <div>
+          {faqs.map(([question, answer]) => (
+            <details key={question}>
+              <summary>
+                {question}
+                <Plus size={20} aria-hidden="true" />
+              </summary>
+              <p>{answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+function MadeForPage() {
+  return (
+    <>
+      <PageIntro
+        eyebrow="04 / MADE FOR"
+        title={
+          <>
+            Radio made for <em>real life.</em>
+          </>
+        }
+      >
+        No studio voice required. Radio South City is a welcoming place for the songs, memories,
+        ideas and everyday magic that live in our neighbourhood.
+      </PageIntro>
+      <section className="web-wrap web-section web-made-for">
+        <div className="web-made-card">
+          <Music2 size={30} />
+          <h2>Made for the moment you want to share.</h2>
+          <p>
+            For the singer in the next block. The storyteller at the lift. The child with a poem.
+            The neighbour with a recipe, a memory or a new idea.
+          </p>
+          <External
+            href={message(
+              'Hello Radio South City! I would like to share something with the community.',
+            )}
+            className="web-button"
+          >
+            Share your voice
+          </External>
+        </div>
+      </section>
+    </>
+  );
+}
 function Website() {
   const [menu, setMenu] = useState(false);
+  const [page, setPage] = useState(() => window.location.hash.slice(2) || 'home');
+  React.useEffect(() => {
+    const update = () => setPage(window.location.hash.slice(2) || 'home');
+    window.addEventListener('hashchange', update);
+    return () => window.removeEventListener('hashchange', update);
+  }, []);
+  const content =
+    page === 'story' ? (
+      <StoryPage />
+    ) : page === 'events' ? (
+      <EventsPage />
+    ) : page === 'faq' ? (
+      <FaqPage />
+    ) : page === 'made-for' ? (
+      <MadeForPage />
+    ) : null;
   return (
     <>
       <a className="web-skip" href="#main">
@@ -84,295 +344,304 @@ function Website() {
           aria-label="Main navigation"
           onClick={() => setMenu(false)}
         >
-          <a href="#about">Our story</a>
+          <a href="#/story">Our story</a>
+          <a href="#/events">Events</a>
+          <a href="#/made-for">Made for</a>
           <a href="#contribute">Be heard</a>
           <a href="#community">Community</a>
-          <a href="#faq">FAQs</a>
+          <a href="#/faq">FAQs</a>
           <a className="web-button web-button-small" href="/">
             Open listener <Headphones size={16} />
           </a>
         </nav>
       </header>
       <main id="main">
-        <section className="web-hero web-wrap">
-          <div className="web-hero-copy">
-            <p className="web-eyebrow">
-              <span className="web-dot" /> A COMMUNITY. A THOUSAND VOICES.
-            </p>
-            <h1>
-              Your neighbourhood.
-              <br />
-              Your voice.
-              <br />
-              <em>Be heard.</em>
-            </h1>
-            <p className="web-lead">
-              A little music. A familiar voice. A story from next door. Welcome to Radio South City
-              — a radio station made by the people who call this place home.
-            </p>
-            <div className="web-actions">
-              <a className="web-button" href="/">
-                Explore the listener <ArrowUpRight size={19} />
-              </a>
-              <a className="web-text-link" href="#contribute">
-                Share your voice <ArrowRight size={18} />
-              </a>
+        {content || (
+          <>
+            <section className="web-hero web-wrap">
+              <div className="web-hero-copy">
+                <p className="web-eyebrow">
+                  <span className="web-dot" /> A COMMUNITY. A THOUSAND VOICES.
+                </p>
+                <h1>
+                  Your neighbourhood.
+                  <br />
+                  Your voice.
+                  <br />
+                  <em>Be heard.</em>
+                </h1>
+                <p className="web-lead">
+                  A little music. A familiar voice. A story from next door. Welcome to Radio South
+                  City — a radio station made by the people who call this place home.
+                </p>
+                <div className="web-actions">
+                  <a className="web-button" href="/">
+                    Explore the listener <ArrowUpRight size={19} />
+                  </a>
+                  <a className="web-text-link" href="#contribute">
+                    Share your voice <ArrowRight size={18} />
+                  </a>
+                </div>
+                <div className="web-hero-foot">
+                  <Radio size={20} />
+                  <span>By the residents. For the residents. Of South City.</span>
+                </div>
+              </div>
+              <div className="web-hero-photo">
+                <img
+                  src="/website/images/lnt-south-city-park.jpg"
+                  alt="L&T South City residential towers overlooking the landscaped park in Bengaluru"
+                  fetchPriority="high"
+                />
+                <div className="web-photo-caption">
+                  <span>THE PLACE WE CALL HOME</span>
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=L%26T+South+City+Bengaluru"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="View L&T South City, Bengaluru on Google Maps"
+                  >
+                    Bengaluru ↗
+                  </a>
+                </div>
+                <div className="web-sticker">
+                  <Mic2 size={29} />
+                  <span>
+                    LOCAL VOICES.
+                    <br />
+                    SHARED STORIES.
+                  </span>
+                </div>
+              </div>
+            </section>
+            <div className="web-ribbon" aria-label="Music, stories, poetry and conversations">
+              <span>MUSIC</span>
+              <i>✳</i>
+              <span>STORIES</span>
+              <i>✳</i>
+              <span>POETRY</span>
+              <i>✳</i>
+              <span>CONVERSATIONS</span>
+              <i>✳</i>
+              <span>OUR COMMUNITY</span>
             </div>
-            <div className="web-hero-foot">
-              <Radio size={20} />
-              <span>By the residents. For the residents. Of South City.</span>
-            </div>
-          </div>
-          <div className="web-hero-photo">
-            <img
-              src="/website/images/lnt-south-city-park.jpg"
-              alt="L&T South City residential towers overlooking the landscaped park in Bengaluru"
-              fetchPriority="high"
-            />
-            <div className="web-photo-caption">
-              <span>THE PLACE WE CALL HOME</span>
-              <a
-                href="https://www.google.com/maps/search/?api=1&query=L%26T+South+City+Bengaluru"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="View L&T South City, Bengaluru on Google Maps"
-              >
-                Bengaluru ↗
-              </a>
-            </div>
-            <div className="web-sticker">
-              <Mic2 size={29} />
-              <span>
-                LOCAL VOICES.
-                <br />
-                SHARED STORIES.
-              </span>
-            </div>
-          </div>
-        </section>
-        <div className="web-ribbon" aria-label="Music, stories, poetry and conversations">
-          <span>MUSIC</span>
-          <i>✳</i>
-          <span>STORIES</span>
-          <i>✳</i>
-          <span>POETRY</span>
-          <i>✳</i>
-          <span>CONVERSATIONS</span>
-          <i>✳</i>
-          <span>OUR COMMUNITY</span>
-        </div>
-        <section id="about" className="web-wrap web-about web-section">
-          <div className="web-story-heading">
-            <p className="web-eyebrow">01 / OUR STORY</p>
-            <h2>
-              More than neighbours.
-              <br />
-              <em>A community on air.</em>
-            </h2>
-          </div>
-          <div className="web-story-copy">
-            <p className="web-large-copy">Behind every door is a story worth sharing.</p>
-            <p>
-              Radio South City brings those stories together. The song you love to sing. The poem
-              tucked away in your notebook. The journey you still talk about. This is a space for
-              the people of South City to connect through sound.
-            </p>
-            <p>
-              Created by residents, for residents, our internet radio makes room for familiar voices
-              and fresh discoveries. All you need is a little curiosity — and something to share.
-            </p>
-            <a className="web-text-link" href="#contribute">
-              There’s a place for your voice here <ArrowRight size={18} />
-            </a>
-          </div>
-          <div className="web-story-logo">
-            <Brand variant="badge" />
-          </div>
-        </section>
-        <section id="contribute" className="web-contribute">
-          <div className="web-wrap web-section">
-            <div className="web-section-heading">
-              <div>
-                <p className="web-eyebrow">02 / THE MIC IS YOURS</p>
+            <section id="about" className="web-wrap web-about web-section">
+              <div className="web-story-heading">
+                <p className="web-eyebrow">01 / OUR STORY</p>
                 <h2>
-                  What’s your <em>kind of radio?</em>
+                  More than neighbours.
+                  <br />
+                  <em>A community on air.</em>
                 </h2>
               </div>
-              <p>
-                You don’t have to be a professional.
-                <br />
-                You just have to be you.
-              </p>
-            </div>
-            <div className="web-topics">
-              {[
-                [
-                  Music2,
-                  '01',
-                  'A song, a little soul.',
-                  'Sing a favourite, play an instrument, or share an original piece. Let the neighbourhood hear your music.',
-                ],
-                [
-                  BookOpen,
-                  '02',
-                  'Stories that stay.',
-                  'Poetry, storytelling, travel diaries, or a memory worth keeping. Bring us into your world.',
-                ],
-                [
-                  MessageCircle,
-                  '03',
-                  'Everyday inspiration.',
-                  'A family recipe, a personal milestone, a useful idea. Sometimes the everyday makes the best listening.',
-                ],
-              ].map(([Icon, number, title, copy]) => (
-                <article key={number}>
-                  <div className="web-topic-top">
-                    <Icon size={29} />
-                    <span>{number}</span>
-                  </div>
-                  <h3>{title}</h3>
-                  <p>{copy}</p>
-                </article>
-              ))}
-            </div>
-            <div className="web-submission">
-              <div>
-                <strong>Record. Send. Be heard.</strong>
+              <div className="web-story-copy">
+                <p className="web-large-copy">Behind every door is a story worth sharing.</p>
                 <p>
-                  Share an MP3 in Hindi or English. Our team will review it and arrange a broadcast
-                  slot. All ages welcome.
+                  Radio South City brings those stories together. The song you love to sing. The
+                  poem tucked away in your notebook. The journey you still talk about. This is a
+                  space for the people of South City to connect through sound.
+                </p>
+                <p>
+                  Created by residents, for residents, our internet radio makes room for familiar
+                  voices and fresh discoveries. All you need is a little curiosity — and something
+                  to share.
+                </p>
+                <a className="web-text-link" href="#/story">
+                  There’s a place for your voice here <ArrowRight size={18} />
+                </a>
+              </div>
+              <div className="web-story-logo">
+                <Brand variant="badge" />
+              </div>
+            </section>
+            <section id="contribute" className="web-contribute">
+              <div className="web-wrap web-section">
+                <div className="web-section-heading">
+                  <div>
+                    <p className="web-eyebrow">02 / THE MIC IS YOURS</p>
+                    <h2>
+                      What’s your <em>kind of radio?</em>
+                    </h2>
+                  </div>
+                  <p>
+                    You don’t have to be a professional.
+                    <br />
+                    You just have to be you.
+                  </p>
+                </div>
+                <div className="web-topics">
+                  {[
+                    [
+                      Music2,
+                      '01',
+                      'A song, a little soul.',
+                      'Sing a favourite, play an instrument, or share an original piece. Let the neighbourhood hear your music.',
+                    ],
+                    [
+                      BookOpen,
+                      '02',
+                      'Stories that stay.',
+                      'Poetry, storytelling, travel diaries, or a memory worth keeping. Bring us into your world.',
+                    ],
+                    [
+                      MessageCircle,
+                      '03',
+                      'Everyday inspiration.',
+                      'A family recipe, a personal milestone, a useful idea. Sometimes the everyday makes the best listening.',
+                    ],
+                  ].map(([Icon, number, title, copy]) => (
+                    <article key={number}>
+                      <div className="web-topic-top">
+                        <Icon size={29} />
+                        <span>{number}</span>
+                      </div>
+                      <h3>{title}</h3>
+                      <p>{copy}</p>
+                    </article>
+                  ))}
+                </div>
+                <div className="web-submission">
+                  <div>
+                    <strong>Record. Send. Be heard.</strong>
+                    <p>
+                      Share an MP3 in Hindi or English. Our team will review it and arrange a
+                      broadcast slot. All ages welcome.
+                    </p>
+                  </div>
+                  <External
+                    href={message(
+                      'Hello Radio South City! I would like to submit an MP3 recording.',
+                    )}
+                    className="web-button"
+                  >
+                    Send your recording
+                  </External>
+                </div>
+                <p className="web-fine-print">
+                  A space for creativity and connection. Political and religious discourses are not
+                  accepted.
                 </p>
               </div>
-              <External
-                href={message('Hello Radio South City! I would like to submit an MP3 recording.')}
-                className="web-button"
-              >
-                Send your recording
-              </External>
-            </div>
-            <p className="web-fine-print">
-              A space for creativity and connection. Political and religious discourses are not
-              accepted.
-            </p>
-          </div>
-        </section>
-        <section id="community" className="web-wrap web-section">
-          <div className="web-section-heading">
-            <div>
-              <p className="web-eyebrow">03 / ROOTED RIGHT HERE</p>
-              <h2>
-                Our place. <em>Our people.</em>
-              </h2>
-            </div>
-            <p>
-              The familiar corners.
-              <br />
-              The extraordinary everyday.
-            </p>
-          </div>
-          <div className="web-gallery">
-            <figure>
-              <img
-                src="/website/images/lnt-south-city-towers.jpg"
-                alt="An elevated view of L&T South City towers and flowering trees in Bengaluru"
-                loading="lazy"
-              />
-              <figcaption>A thousand windows. A thousand stories.</figcaption>
-            </figure>
-            <figure>
-              <img
-                src="/website/images/south-city-pond.jpg"
-                alt="Pink water lilies flowering on the neighbourhood pond"
-                loading="lazy"
-              />
-              <figcaption>A moment of calm, close to home.</figcaption>
-            </figure>
-          </div>
-          <p className="web-photo-credit">
-            L&T South City, Bengaluru · Park and tower photographs:{' '}
-            <a
-              href="https://www.cgaei.com/projects/l%26t_south_city_bengaluru/l%26t_south_city_bengaluru.html"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Carambiah &amp; George project archive
-            </a>
-            . Pond photograph courtesy of Sandhya Ashwin.
-          </p>
-          <div className="web-community-notes">
-            <article>
-              <span className="web-eyebrow">THE PEOPLE BEHIND THE SOUND</span>
-              <h3>Made together.</h3>
-              <p>
-                Residents contribute the recordings, ideas and care that bring this station to life.
-                Want to lend a hand? Introduce yourself to the team.
+            </section>
+            <section id="community" className="web-wrap web-section">
+              <div className="web-section-heading">
+                <div>
+                  <p className="web-eyebrow">03 / ROOTED RIGHT HERE</p>
+                  <h2>
+                    Our place. <em>Our people.</em>
+                  </h2>
+                </div>
+                <p>
+                  The familiar corners.
+                  <br />
+                  The extraordinary everyday.
+                </p>
+              </div>
+              <div className="web-gallery">
+                <figure>
+                  <img
+                    src="/website/images/lnt-south-city-towers.jpg"
+                    alt="An elevated view of L&T South City towers and flowering trees in Bengaluru"
+                    loading="lazy"
+                  />
+                  <figcaption>A thousand windows. A thousand stories.</figcaption>
+                </figure>
+                <figure>
+                  <img
+                    src="/website/images/south-city-pond.jpg"
+                    alt="Pink water lilies flowering on the neighbourhood pond"
+                    loading="lazy"
+                  />
+                  <figcaption>A moment of calm, close to home.</figcaption>
+                </figure>
+              </div>
+              <p className="web-photo-credit">
+                L&T South City, Bengaluru · Park and tower photographs:{' '}
+                <a
+                  href="https://www.cgaei.com/projects/l%26t_south_city_bengaluru/l%26t_south_city_bengaluru.html"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Carambiah &amp; George project archive
+                </a>
+                . Pond photograph courtesy of Sandhya Ashwin.
               </p>
-              <External
-                href={message('Hello! I would like to help with Radio South City.')}
-                className="web-text-link"
-              >
-                Get involved
+              <div className="web-community-notes">
+                <article>
+                  <span className="web-eyebrow">THE PEOPLE BEHIND THE SOUND</span>
+                  <h3>Made together.</h3>
+                  <p>
+                    Residents contribute the recordings, ideas and care that bring this station to
+                    life. Want to lend a hand? Introduce yourself to the team.
+                  </p>
+                  <External
+                    href={message('Hello! I would like to help with Radio South City.')}
+                    className="web-text-link"
+                  >
+                    Get involved
+                  </External>
+                </article>
+                <article>
+                  <span className="web-eyebrow">WITH OUR THANKS</span>
+                  <h3>Community supported.</h3>
+                  <p>
+                    Our thanks to <strong>Ujjwal Mukhopadhyay</strong>, listed among the station’s
+                    donors, and to everyone sharing their time and talent.
+                  </p>
+                  <External
+                    href={message('Hello! I would like to know how to support Radio South City.')}
+                    className="web-text-link"
+                  >
+                    Support the station
+                  </External>
+                </article>
+              </div>
+            </section>
+            <section className="web-updates web-wrap">
+              <div className="web-updates-icon">
+                <Radio size={42} />
+              </div>
+              <div>
+                <p className="web-eyebrow">STAY IN THE LOOP</p>
+                <h2>
+                  The next chapter <em>starts with us.</em>
+                </h2>
+                <p>
+                  Launch news, upcoming events and community announcements — hear about them from
+                  the team in our WhatsApp group.
+                </p>
+              </div>
+              <External href={community} className="web-button">
+                Join the community
               </External>
-            </article>
-            <article>
-              <span className="web-eyebrow">WITH OUR THANKS</span>
-              <h3>Community supported.</h3>
-              <p>
-                Our thanks to <strong>Ujjwal Mukhopadhyay</strong>, listed among the station’s
-                donors, and to everyone sharing their time and talent.
-              </p>
-              <External
-                href={message('Hello! I would like to know how to support Radio South City.')}
-                className="web-text-link"
-              >
-                Support the station
-              </External>
-            </article>
-          </div>
-        </section>
-        <section className="web-updates web-wrap">
-          <div className="web-updates-icon">
-            <Radio size={42} />
-          </div>
-          <div>
-            <p className="web-eyebrow">STAY IN THE LOOP</p>
-            <h2>
-              The next chapter <em>starts with us.</em>
-            </h2>
-            <p>
-              Launch news, upcoming events and community announcements — hear about them from the
-              team in our WhatsApp group.
-            </p>
-          </div>
-          <External href={community} className="web-button">
-            Join the community
-          </External>
-        </section>
-        <section id="faq" className="web-wrap web-section web-faq">
-          <div>
-            <p className="web-eyebrow">04 / GOOD TO KNOW</p>
-            <h2>
-              A few things
-              <br />
-              <em>you might ask.</em>
-            </h2>
-            <p>Still curious? We’re a message away.</p>
-            <External href={whatsapp} className="web-text-link">
-              Message the team
-            </External>
-          </div>
-          <div>
-            {faqs.map(([question, answer]) => (
-              <details key={question}>
-                <summary>
-                  {question}
-                  <Plus size={20} aria-hidden="true" />
-                </summary>
-                <p>{answer}</p>
-              </details>
-            ))}
-          </div>
-        </section>
+            </section>
+            <section id="faq" className="web-wrap web-section web-faq">
+              <div>
+                <p className="web-eyebrow">04 / GOOD TO KNOW</p>
+                <h2>
+                  A few things
+                  <br />
+                  <em>you might ask.</em>
+                </h2>
+                <p>Still curious? We’re a message away.</p>
+                <External href={whatsapp} className="web-text-link">
+                  Message the team
+                </External>
+              </div>
+              <div>
+                {faqs.map(([question, answer]) => (
+                  <details key={question}>
+                    <summary>
+                      {question}
+                      <Plus size={20} aria-hidden="true" />
+                    </summary>
+                    <p>{answer}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
         <section id="contact" className="web-contact">
           <div className="web-wrap">
             <p className="web-eyebrow">LET’S MAKE SOME GOOD RADIO.</p>
