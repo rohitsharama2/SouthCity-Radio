@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { useLiveStream } from './useLiveStream.js';
 import { useAccount } from './useAccount.js';
 import { setMediaActionHandler, setMediaMetadata, setMediaPlaybackState } from './mediaSession.js';
+import { NativeRadio } from './nativeRadio.js';
 const AudioContext = createContext(null);
 export const useAudio = () => useContext(AudioContext);
 export function AudioProvider({ children }) {
@@ -28,11 +29,13 @@ export function AudioProvider({ children }) {
     wantsPlayback.current = false;
     attempt.current += 1;
     audio.current?.pause();
+    NativeRadio?.pause().catch(() => {});
     setStatus('paused');
   }
   function stop() {
     pause();
     setSession(false);
+    NativeRadio?.stop().catch(() => {});
   }
   function scheduleRecovery() {
     const player = audio.current;
@@ -169,6 +172,23 @@ export function AudioProvider({ children }) {
     recoveryAttempts.current = 0;
     clearTimeout(recoveryTimer.current);
     setSession(true);
+    if (NativeRadio) {
+      selected.current = next;
+      setStation(next);
+      setStatus('connecting');
+      try {
+        await NativeRadio.play({
+          url: next.stream,
+          title: next.name,
+          artist: 'Radio South City',
+          album: next.name,
+        });
+        setStatus('playing');
+      } catch {
+        setStatus(navigator.onLine ? 'connection error' : 'offline');
+      }
+      return;
+    }
     // A republished stream address for the same station also needs a fresh source.
     if (next.id !== selected.current?.id || next.stream !== selected.current?.stream) {
       player.pause();
