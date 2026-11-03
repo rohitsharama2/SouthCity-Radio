@@ -73,10 +73,17 @@ export function parseSongTitle(raw) {
 
 export function parseStats(json) {
   if (!json || typeof json !== 'object') throw new Error('Invalid stream stats');
+  // Shoutcast/Icecast-compatible servers do not all use the same casing or field name.
+  // Keep the public snapshot stable while accepting the common variants returned by hosts.
+  const source = json.icestats?.source ?? json.stats ?? json;
+  const rawListeners =
+    source.currentlisteners ??
+    source.currentListeners ??
+    source.listeners ??
+    source.numlisteners ??
+    source.numListeners;
   const listeners =
-      json.currentlisteners == null || String(json.currentlisteners).trim() === ''
-        ? NaN
-        : Number(json.currentlisteners),
+      rawListeners == null || String(rawListeners).trim() === '' ? NaN : Number(rawListeners),
     bitrate = Number(json.bitrate),
     uptime = Number(json.streamuptime);
   return {

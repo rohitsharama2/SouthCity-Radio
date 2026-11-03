@@ -49,6 +49,11 @@ test('treats missing or invalid stats fields as unknown, not zero', () => {
   assert.throws(() => parseStats(null));
 });
 
+test('accepts common listener count field variants from stream hosts', () => {
+  assert.equal(parseStats({ streamstatus: 1, currentListeners: '12' }).listeners, 12);
+  assert.equal(parseStats({ streamstatus: 1, listeners: 7 }).listeners, 7);
+});
+
 test('splits artist and title on the first separator', () => {
   assert.deepEqual(parseSongTitle('Arijit Singh - Tum Hi Ho - Live'), {
     artist: 'Arijit Singh',

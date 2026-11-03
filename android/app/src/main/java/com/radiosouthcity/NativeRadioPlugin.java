@@ -6,9 +6,23 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.JSObject;
 
 @CapacitorPlugin(name = "NativeRadio")
 public class NativeRadioPlugin extends Plugin {
+    private static NativeRadioPlugin instance;
+
+    @Override
+    public void load() {
+        instance = this;
+    }
+
+    public static void emitPlaybackState(String state) {
+        if (instance == null) return;
+        JSObject data = new JSObject();
+        data.put("state", state);
+        instance.notifyListeners("playbackStateChange", data);
+    }
     @PluginMethod
     public void play(PluginCall call) {
         String url = call.getString("url");

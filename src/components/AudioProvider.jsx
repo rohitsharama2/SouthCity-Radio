@@ -26,16 +26,18 @@ export function AudioProvider({ children }) {
   // Only a selected live station subscribes; metadata never touches audio.src.
   const live = useLiveStream(Boolean(station?.live));
   function pause() {
+    const wasPlaying = wantsPlayback.current;
     wantsPlayback.current = false;
     attempt.current += 1;
     audio.current?.pause();
-    NativeRadio?.pause().catch(() => {});
+    if (wasPlaying) NativeRadio?.pause().catch(() => {});
     setStatus('paused');
   }
   function stop() {
+    const wasPlaying = wantsPlayback.current;
     pause();
     setSession(false);
-    NativeRadio?.stop().catch(() => {});
+    if (wasPlaying) NativeRadio?.stop().catch(() => {});
   }
   function scheduleRecovery() {
     const player = audio.current;
@@ -130,6 +132,26 @@ export function AudioProvider({ children }) {
     };
   }, []);
   useEffect(() => {
+    if (!NativeRadio) return undefined;
+    let handle;
+    NativeRadio.addListener('playbackStateChange', ({ state }) => {
+      if (state === 'playing') {
+        wantsPlayback.current = true;
+        setSession(true);
+        setStatus('playing');
+      } else if (state === 'paused' || state === 'stopped') {
+        wantsPlayback.current = false;
+        setStatus('paused');
+        if (state === 'stopped') setSession(false);
+      } else if (state === 'error') {
+        setStatus(navigator.onLine ? 'connection error' : 'offline');
+      }
+    }).then((listener) => {
+      handle = listener;
+    });
+    return () => handle?.remove();
+  }, []);
+  useEffect(() => {
     if (audio.current) audio.current.volume = volume;
   }, [volume]);
   useEffect(() => {
@@ -183,7 +205,6 @@ export function AudioProvider({ children }) {
           artist: 'Radio South City',
           album: next.name,
         });
-        setStatus('playing');
       } catch {
         setStatus(navigator.onLine ? 'connection error' : 'offline');
       }
