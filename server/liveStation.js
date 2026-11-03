@@ -4,6 +4,7 @@ import {
   liveEndpoints,
   liveMetadataPath,
   liveStationDefaults,
+  azuraNowPlayingUrl,
   validateLiveStation,
 } from '../src/data/liveStream.js';
 
@@ -206,7 +207,27 @@ async function publish(req, res, { accounts, store, config, request }) {
 async function fetchMetadata(requestPath, { config, request }) {
   const { streamUrl } = await config.get();
   try {
-    const target = new URL(requestPath.slice(liveMetadataPath.length), new URL(streamUrl).origin);
+    const azuraUrl = azuraNowPlayingUrl(streamUrl);
+    let target;
+    if (requestPath === liveEndpoints.stats) {
+      if (azuraUrl) target = new URL(azuraUrl);
+      else {
+        const stream = new URL(streamUrl);
+        const stations = await request(`${stream.origin}/api/stations`, {
+          signal: upstreamTimeout(),
+        }).then((response) => (response.ok ? response.json() : []));
+        const match = (Array.isArray(stations) ? stations : []).find((station) =>
+          [station.listen_url, ...(station.mounts || []).map((mount) => mount.url)].some(
+            (url) => url && new URL(url).href === stream.href,
+          ),
+        );
+        if (match?.shortcode)
+          target = new URL(
+            `${stream.origin}/api/nowplaying/${encodeURIComponent(match.shortcode)}`,
+          );
+      }
+    }
+    target ??= new URL(requestPath.slice(liveMetadataPath.length), new URL(streamUrl).origin);
     const response = await request(target, { signal: upstreamTimeout() });
     return { status: response.ok ? 200 : 502, body: await response.text() };
   } catch {

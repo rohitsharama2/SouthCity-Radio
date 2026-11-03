@@ -9,7 +9,7 @@ export const liveStationDefaults = {
     'The SouthCity broadcast, streaming live. Song titles and listener counts update from the station server as they change.',
   genre: 'Eclectic',
   language: 'Multilingual',
-  streamUrl: 'http://85.25.185.202:8665/stream',
+  streamUrl: 'https://a10.asurahosting.com:7400/radio.mp3',
 };
 export const liveServer = new URL(liveStationDefaults.streamUrl).origin;
 export const stationGenres = ['Eclectic', 'Jazz', 'Indie', 'Chill', 'Soul', 'Electronic'];
@@ -23,6 +23,18 @@ export const liveEndpoints = {
   history: `${liveMetadataPath}/played?sid=1&type=json`,
 };
 export const publicStatsUrl = (streamUrl) => `${new URL(streamUrl).origin}/stats?sid=1&json=1`;
+
+// AzuraCast public stream URLs normally look like /listen/<station_shortcode>/... .
+// The shortcode lets the server use the public Now Playing API without credentials.
+export const azuraNowPlayingUrl = (streamUrl) => {
+  try {
+    const url = new URL(streamUrl);
+    const match = url.pathname.match(/^\/listen\/([^/]+)/i);
+    return match ? `${url.origin}/api/nowplaying/${encodeURIComponent(match[1])}` : null;
+  } catch {
+    return null;
+  }
+};
 
 // Shared by the admin form and the server, so both enforce the same rules.
 export function validateLiveStation(input) {
@@ -75,8 +87,10 @@ export function parseStats(json) {
   if (!json || typeof json !== 'object') throw new Error('Invalid stream stats');
   // Shoutcast/Icecast-compatible servers do not all use the same casing or field name.
   // Keep the public snapshot stable while accepting the common variants returned by hosts.
+  const azura = json.listeners || json.now_playing ? json : null;
   const source = json.icestats?.source ?? json.stats ?? json;
   const rawListeners =
+    azura?.listeners?.current ??
     source.currentlisteners ??
     source.currentListeners ??
     source.listeners ??
@@ -86,13 +100,16 @@ export function parseStats(json) {
       rawListeners == null || String(rawListeners).trim() === '' ? NaN : Number(rawListeners),
     bitrate = Number(json.bitrate),
     uptime = Number(json.streamuptime);
+  const song = azura?.now_playing?.song;
+  const title = song?.title ?? json.songtitle;
+  const artist = song?.artist ?? null;
   return {
     onAir: Number(json.streamstatus) === 1,
     listeners: Number.isInteger(listeners) && listeners >= 0 ? listeners : null,
     uptimeSeconds: Number.isFinite(uptime) && uptime >= 0 ? uptime : null,
     bitrateKbps: Number.isFinite(bitrate) && bitrate > 0 ? bitrate : null,
     codec: codecs[json.content] || null,
-    ...parseSongTitle(json.songtitle),
+    ...(song ? { title: title || null, artist: artist || null } : parseSongTitle(json.songtitle)),
   };
 }
 

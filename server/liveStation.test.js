@@ -54,7 +54,7 @@ test('metadata is proxied from the configured stream, cached, and limited to the
     });
   assert.deepEqual(
     upstream.filter((url) => !url.startsWith(supabaseUrl)),
-    ['http://stream.example:8000/stats?sid=1&json=1'],
+    ['http://stream.example:8000/api/stations', 'http://stream.example:8000/stats?sid=1&json=1'],
   );
   clock += 6000;
   await call(middleware, { url: liveEndpoints.stats });

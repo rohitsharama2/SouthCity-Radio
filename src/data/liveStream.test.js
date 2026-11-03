@@ -12,6 +12,7 @@ import {
   withLiveConfig,
   validateLiveStation,
   liveStationDefaults,
+  azuraNowPlayingUrl,
 } from './liveStream.js';
 
 // Captured from the station's SHOUTcast DNAS 2.5.5 /stats?sid=1&json=1 endpoint.
@@ -52,6 +53,28 @@ test('treats missing or invalid stats fields as unknown, not zero', () => {
 test('accepts common listener count field variants from stream hosts', () => {
   assert.equal(parseStats({ streamstatus: 1, currentListeners: '12' }).listeners, 12);
   assert.equal(parseStats({ streamstatus: 1, listeners: 7 }).listeners, 7);
+});
+
+test('parses AzuraCast Now Playing responses and derives its public API URL', () => {
+  assert.equal(
+    azuraNowPlayingUrl('https://radio.example/listen/southcity/radio.mp3'),
+    'https://radio.example/api/nowplaying/southcity',
+  );
+  assert.deepEqual(
+    parseStats({
+      listeners: { current: 12 },
+      now_playing: { song: { title: 'Midnight Drive', artist: 'South City' } },
+    }),
+    {
+      onAir: false,
+      listeners: 12,
+      uptimeSeconds: null,
+      bitrateKbps: null,
+      codec: null,
+      title: 'Midnight Drive',
+      artist: 'South City',
+    },
+  );
 });
 
 test('splits artist and title on the first separator', () => {
