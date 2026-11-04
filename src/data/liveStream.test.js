@@ -60,6 +60,10 @@ test('parses AzuraCast Now Playing responses and derives its public API URL', ()
     azuraNowPlayingUrl('https://radio.example/listen/southcity/radio.mp3'),
     'https://radio.example/api/nowplaying/southcity',
   );
+  assert.equal(
+    azuraNowPlayingUrl('https://a10.asurahosting.com:7400/radio.mp3'),
+    'https://a10.asurahosting.com/api/nowplaying/728',
+  );
   assert.deepEqual(
     parseStats({
       listeners: { current: 12 },
