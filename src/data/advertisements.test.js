@@ -5,6 +5,7 @@ import {
   newAdvertisement,
   validateAdvertisements,
   publicAdUrl,
+  publicWhatsAppUrl,
 } from './advertisements.js';
 test('ad slots validate required copy, limits, and safe destinations', () => {
   const cards = [newAdvertisement()];
@@ -28,6 +29,12 @@ test('ad slots validate required copy, limits, and safe destinations', () => {
     assert.equal(publicAdUrl(url), '');
   }
   cards[0].linkUrl = '';
+  cards[0].whatsappNumber = '+91 91031 47596';
+  assert.equal(publicWhatsAppUrl(cards[0].whatsappNumber), 'https://wa.me/919103147596');
+  assert.ok(validateAdvertisements(cards).value);
+  cards[0].whatsappNumber = '123';
+  assert.ok(validateAdvertisements(cards).error);
+  cards[0].whatsappNumber = '';
   cards[0].title = 'x'.repeat(81);
   assert.ok(validateAdvertisements(cards).error);
   assert.deepEqual(validateAdvertisements(emptyAdvertisements()).value, []);

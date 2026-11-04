@@ -217,6 +217,18 @@ export default function AdvertisementAdmin({ allowed }) {
                     onChange={(event) => update('linkUrl', event.target.value)}
                   />
                 </label>
+                <label>
+                  WhatsApp number
+                  <input
+                    type="tel"
+                    placeholder="919103147596"
+                    value={cards[slot].whatsappNumber}
+                    onChange={(event) => update('whatsappNumber', event.target.value)}
+                  />
+                </label>
+                <small>
+                  Include the country code. Spaces, +, hyphens and brackets are accepted.
+                </small>
                 <label className="sponsor-enabled">
                   <input
                     type="checkbox"

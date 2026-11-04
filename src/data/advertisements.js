@@ -6,6 +6,7 @@ export const newAdvertisement = () => ({
   description: '',
   imageUrl: '',
   linkUrl: '',
+  whatsappNumber: '',
   enabled: false,
 });
 export const emptyAdvertisements = () => [];
@@ -18,6 +19,13 @@ export function publicAdUrl(value) {
   } catch {
     return '';
   }
+}
+export function publicWhatsAppUrl(value) {
+  if (typeof value !== 'string') return '';
+  const digits = value.replace(/\D/g, '');
+  return digits.length >= 7 && digits.length <= 15 && digits === value.replace(/[\s()+-]/g, '')
+    ? `https://wa.me/${digits}`
+    : '';
 }
 
 export function validateAdvertisements(input) {
@@ -34,6 +42,7 @@ export function validateAdvertisements(input) {
       description: 160,
       imageUrl: 1000,
       linkUrl: 1000,
+      whatsappNumber: 30,
     })) {
       if (typeof card[key] !== 'string' || card[key].trim().length > limit)
         return { error: `Card ${index + 1}: ${key} must be text of at most ${limit} characters.` };
@@ -45,6 +54,8 @@ export function validateAdvertisements(input) {
       if (value[key] && !publicAdUrl(value[key]))
         return { error: `Card ${index + 1}: use an HTTPS address without embedded credentials.` };
     }
+    if (value.whatsappNumber && !publicWhatsAppUrl(value.whatsappNumber))
+      return { error: `Card ${index + 1}: enter a valid WhatsApp number with country code.` };
     cards.push(value);
   }
   return { value: cards };

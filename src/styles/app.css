@@ -3905,3 +3905,9 @@ select {
   margin-top: 16px;
   font-weight: 700;
 }
+.sponsor-whatsapp-link {
+  color: #128c7e;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

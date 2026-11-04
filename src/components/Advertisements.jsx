@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowUpRight, Image } from 'lucide-react';
+import { ArrowUpRight, Image, MessageCircle } from 'lucide-react';
 import { Modal, SectionHeading } from './ui.jsx';
 import {
   advertisementsPath,
   emptyAdvertisements,
   publicAdUrl,
+  publicWhatsAppUrl,
   validateAdvertisements,
 } from '../data/advertisements.js';
 import { serverUrl } from './server.js';
@@ -38,6 +39,7 @@ export function AdvertisementCard({ card, index, onOpen }) {
   const [failedImage, setFailedImage] = useState('');
   const imageUrl = publicAdUrl(card.imageUrl);
   const linkUrl = publicAdUrl(card.linkUrl);
+  const whatsappUrl = publicWhatsAppUrl(card.whatsappNumber);
   const enabled = card.enabled && card.title && card.sponsor;
   const content = (
     <>
@@ -88,6 +90,17 @@ export function AdvertisementCard({ card, index, onOpen }) {
         >
           Visit {card.sponsor}
           <ArrowUpRight size={14} aria-hidden="true" />
+        </a>
+      )}
+      {!onOpen && enabled && whatsappUrl && (
+        <a
+          className="sponsor-whatsapp-link"
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          aria-label={`Message ${card.sponsor} on WhatsApp (opens in a new tab)`}
+        >
+          <MessageCircle size={15} aria-hidden="true" /> Message on WhatsApp
         </a>
       )}
     </article>
