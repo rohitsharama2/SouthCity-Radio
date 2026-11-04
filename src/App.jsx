@@ -540,8 +540,26 @@ function RadioApp() {
                   </div>
                   <div className="hero-content">
                     <div className="hero-buttons">
-                      <Button onClick={() => play(stations[0])}>
-                        <Play size={16} fill="currentColor" /> Start listening
+                      <Button
+                        disabled={['connecting', 'buffering'].includes(audio.status)}
+                        onClick={() => {
+                          if (playing) audio.stop();
+                          else play(stations[0]);
+                        }}
+                      >
+                        {['connecting', 'buffering'].includes(audio.status) ? (
+                          <>
+                            <LoaderCircle size={16} className="spin" /> Connecting…
+                          </>
+                        ) : playing ? (
+                          <>
+                            <Square size={15} fill="currentColor" /> Stop listening
+                          </>
+                        ) : (
+                          <>
+                            <Play size={16} fill="currentColor" /> Start listening
+                          </>
+                        )}
                       </Button>
                       <div className="hero-listeners">
                         <Headphones size={16} aria-hidden="true" />

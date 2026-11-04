@@ -105,7 +105,9 @@ public class RadioPlaybackService extends MediaSessionService {
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
-        if (player == null || !player.isPlaying()) stopSelf();
+        // Keep playback while the app is merely backgrounded, but stop it when the
+        // user explicitly dismisses the app from Android's Recents screen.
+        stopSelf();
     }
 
     @Override

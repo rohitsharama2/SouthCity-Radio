@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import App from './App.jsx';
 import {
   ArrowUpRight,
   ArrowRight,
@@ -73,11 +74,6 @@ const team = [
     'Anupama',
     'anu.jpeg',
     'Creative by instinct, curious by nature, and a people-person at heart. A teacher, gardener, creator of skits, lover of children, collector of conversations and now an RJ, Anu wears many hats with her own colourful flair. She believes in balancing it all, creating constantly, laughing loudly, and growing beautifully.',
-  ],
-  [
-    'Neha',
-    'nisha.jpeg',
-    'Neha is one of Radio South City’s resident voices, bringing warmth, curiosity and a love of conversation to the community station.',
   ],
   [
     'Ramyashree',
@@ -167,7 +163,6 @@ function StoryPage() {
             <article className="web-person" key={name}>
               <img src={`/website/images/${image}`} alt={`${name}, Radio South City team member`} />
               <div>
-                <p className="web-eyebrow">RADIO SOUTH CITY</p>
                 <h2>{name}</h2>
                 <p>{bio}</p>
               </div>
@@ -681,8 +676,9 @@ function Website() {
     </>
   );
 }
+const Root = () => (window.location.hash === '#admin' ? <App /> : <Website />);
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <Website />
+    <Root />
   </React.StrictMode>,
 );
