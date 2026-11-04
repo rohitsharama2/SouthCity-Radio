@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Brand } from './components/ui.jsx';
 import './styles/tokens.css';
+import './styles/app.css';
 import './styles/website.css';
 
 const whatsapp = 'https://wa.me/919103147596';

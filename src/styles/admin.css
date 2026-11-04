@@ -1933,6 +1933,20 @@
   font-size: 12px;
   margin-bottom: 12px;
 }
+.sponsor-preview {
+  min-width: 0;
+  width: 100%;
+  padding-top: 20px;
+}
+.sponsor-preview .sponsor-card {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+}
+.sponsor-preview .sponsor-art {
+  width: 100%;
+  max-width: 280px;
+}
 @media (max-width: 760px) {
   .sponsor-editor {
     padding: 18px;
@@ -1943,6 +1957,7 @@
   .sponsor-preview {
     max-width: 280px;
     width: 100%;
+    padding-top: 0;
   }
 }
 
