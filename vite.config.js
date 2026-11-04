@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
         input:
           mode === 'android'
             ? { app: 'index.html' }
-            : { app: 'index.html', website: 'website/index.html' },
+            : { app: 'player/index.html', website: 'index.html' },
       },
     },
     // Serves account config, publishes SouthCity Live settings, and proxies its metadata.

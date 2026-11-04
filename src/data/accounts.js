@@ -78,7 +78,7 @@ export function mergeLibrary(local, remote) {
 // Where a sign-in link returns. The production build hosts admin at /#admin, but the auth
 // redirect appends a query string, so the workspace travels as ?workspace=admin instead.
 export function authRedirectUrl({ origin, pathname }, workspace) {
-  const url = new URL(pathname || '/', origin);
+  const url = new URL('/player', origin);
   if (workspace === 'admin') url.searchParams.set('workspace', 'admin');
   return url.href;
 }

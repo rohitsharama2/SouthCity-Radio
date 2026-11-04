@@ -55,29 +55,9 @@ const faqs = [
 ];
 const team = [
   [
-    'Anu',
-    'anu.jpeg',
-    'Creative by instinct, curious by nature, and a people-person at heart. A teacher, gardener, creator of skits, lover of children, collector of conversations and now an RJ, Anu wears many hats with her own colourful flair. She believes in balancing it all, creating constantly, laughing loudly, and growing beautifully.',
-  ],
-  [
-    'Udayan Mukherjee',
+    'Col Udayan Mukherjee',
     'udayan.jpeg',
     'An Army veteran from the golden era of radio. Even with the onslaught of TV and internet, radio was at times the only companion from the icy heights of Siachen to the sizzling sands of Rajasthan. Time to hear you all through Radio South City.',
-  ],
-  [
-    'Vinu Iyer',
-    'vinu.jpeg',
-    'Stage performer, marketing strategist, and resident of B6 502, Vinu believes every great broadcast begins with a great beat and an authentic voice. Behind the mic as your friendly host and dost, he blends crisp presentation with deep musical soul.',
-  ],
-  [
-    'Deepika Lal Salwani',
-    'deepika.jpeg',
-    'Driven by advertising and business research, Deepika is a yarn artist, lover of all things handmade, and avid reader. She puts both her left and right brain to work crafting the design, branding, and PR for Radio South City.',
-  ],
-  [
-    'Ramyashree',
-    'ramyashree.jpeg',
-    'Volunteer is the word that suits her. She takes the lead in planning parties, get-togethers and trips, teaches rural students, and now volunteers with Radio South City in designing programmes for listeners.',
   ],
   [
     'Rohit Sharma',
@@ -85,14 +65,39 @@ const team = [
     'As a volunteer developer, Rohit took end-to-end ownership of building the Radio South City website and mobile app, translating the organisation’s vision into user-friendly digital products and stronger community engagement.',
   ],
   [
+    'Vinu',
+    'vinu.jpeg',
+    'Stage performer, marketing strategist, and resident of B6 502, Vinu believes every great broadcast begins with a great beat and an authentic voice. Behind the mic as your friendly host and dost, he blends crisp presentation with deep musical soul.',
+  ],
+  [
+    'Anupama',
+    'anu.jpeg',
+    'Creative by instinct, curious by nature, and a people-person at heart. A teacher, gardener, creator of skits, lover of children, collector of conversations and now an RJ, Anu wears many hats with her own colourful flair. She believes in balancing it all, creating constantly, laughing loudly, and growing beautifully.',
+  ],
+  [
+    'Neha',
+    'nisha.jpeg',
+    'Neha is one of Radio South City’s resident voices, bringing warmth, curiosity and a love of conversation to the community station.',
+  ],
+  [
+    'Ramyashree',
+    'ramyashree.jpeg',
+    'Volunteer is the word that suits her. She takes the lead in planning parties, get-togethers and trips, teaches rural students, and now volunteers with Radio South City in designing programmes for listeners.',
+  ],
+  [
     'Priyadarshini',
     'priyadarshini.jpeg',
-    'CEO and COO of her home, Priyadarshini is passionate about travel planning, punctuality and detail. An avid reader, baker, travel writer and shloka teacher, she has now added talk-show host to her collection of hats.',
+    "CEO and COO of her home, Priyadarshini is passionate about travel planning, punctuality and attention to detail. An avid reader, baker, travel writer and shloka teacher, she's now a part of Radio South City, hosting a talk-show.",
   ],
   [
     'Nisha',
     'nisha.jpeg',
     'A marketer with a restless creative streak and a serious soft spot for good food. Nisha shapes stories, brands and campaigns, and spends her free time cooking, painting, or planning trips that become the next marketing idea.',
+  ],
+  [
+    'Deepika',
+    'deepika.jpeg',
+    'Driven by advertising and business research, Deepika is a yarn artist, lover of all things handmade, and avid reader. She puts both her left and right brain to work crafting the design, branding, and PR for Radio South City.',
   ],
 ];
 const events = [
@@ -350,7 +355,7 @@ function Website() {
           <a href="#contribute">Be heard</a>
           <a href="#community">Community</a>
           <a href="#/faq">FAQs</a>
-          <a className="web-button web-button-small" href="/">
+          <a className="web-button web-button-small" href="/player">
             Open listener <Headphones size={16} />
           </a>
         </nav>
@@ -375,7 +380,7 @@ function Website() {
                   City — a radio station made by the people who call this place home.
                 </p>
                 <div className="web-actions">
-                  <a className="web-button" href="/">
+                  <a className="web-button" href="/player">
                     Explore the listener <ArrowUpRight size={19} />
                   </a>
                   <a className="web-text-link" href="#contribute">

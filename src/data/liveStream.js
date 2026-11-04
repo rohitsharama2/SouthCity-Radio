@@ -87,10 +87,12 @@ export function parseStats(json) {
   if (!json || typeof json !== 'object') throw new Error('Invalid stream stats');
   // Shoutcast/Icecast-compatible servers do not all use the same casing or field name.
   // Keep the public snapshot stable while accepting the common variants returned by hosts.
-  const azura = json.listeners || json.now_playing ? json : null;
+  const azura = json.listeners && typeof json.listeners === 'object' ? json : null;
   const source = json.icestats?.source ?? json.stats ?? json;
   const rawListeners =
     azura?.listeners?.current ??
+    azura?.listeners?.currentListeners ??
+    azura?.listeners?.current_listeners ??
     source.currentlisteners ??
     source.currentListeners ??
     source.listeners ??

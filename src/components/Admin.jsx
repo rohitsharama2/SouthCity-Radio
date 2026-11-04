@@ -111,6 +111,7 @@ export default function Admin({ onExit, theme, setTheme }) {
     [menu, setMenu] = useState(false),
     [autoDJ, setAutoDJ] = useState(() => saved('sc-admin-autodj', true)),
     [drafts, setDrafts] = useState(() => saved('sc-admin-stations', {})),
+    [deletedStations, setDeletedStations] = useState(() => saved('sc-admin-deleted-stations', [])),
     [playlists, setPlaylists] = useState(() => saved('sc-admin-playlists', initialPlaylists)),
     [events, setEvents] = useState(() => saved('sc-admin-schedule', [])),
     [media, setMedia] = useState([]),
@@ -219,9 +220,20 @@ export default function Admin({ onExit, theme, setTheme }) {
   };
   const stationName = (s) =>
     s.live ? withLiveConfig(s, live.config).name : drafts[s.id]?.name || s.name;
-  const filtered = stations.filter((s) =>
-    [stationName(s), s.genre, s.host].join(' ').toLowerCase().includes(query.toLowerCase()),
+  const filtered = stations.filter(
+    (s) =>
+      !deletedStations.includes(s.id) &&
+      [stationName(s), s.genre, s.host].join(' ').toLowerCase().includes(query.toLowerCase()),
   );
+  const deleteStation = (s) => {
+    if (s.live) {
+      notify('SouthCity Live is the published station and cannot be deleted here.');
+      return;
+    }
+    const next = [...new Set([...deletedStations, s.id])];
+    persist('sc-admin-deleted-stations', next, setDeletedStations);
+    notify(`${stationName(s)} removed from this local admin preview`);
+  };
   const exportReport = () => {
     const csv =
       'station,genre,listeners,status\n' +
@@ -302,9 +314,14 @@ export default function Admin({ onExit, theme, setTheme }) {
                   <span className="health-label">{row.health}</span>
                 </td>
                 <td>
-                  <IconButton label={`Manage ${s.name}`} onClick={() => openStation(s)}>
-                    <ChevronRight size={17} />
-                  </IconButton>
+                  <div className="table-actions">
+                    <IconButton label={`Manage ${s.name}`} onClick={() => openStation(s)}>
+                      <ChevronRight size={17} />
+                    </IconButton>
+                    <IconButton label={`Delete ${s.name}`} onClick={() => deleteStation(s)}>
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </div>
                 </td>
               </tr>
             );

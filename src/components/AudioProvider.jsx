@@ -114,9 +114,17 @@ export function AudioProvider({ children }) {
     const visible = () => {
       if (document.visibilityState === 'visible' && wantsPlayback.current) scheduleRecovery();
     };
+    const unload = () => {
+      wantsPlayback.current = false;
+      element.pause();
+      element.removeAttribute('src');
+      if (NativeRadio) NativeRadio.stop().catch(() => {});
+    };
     window.addEventListener('offline', offline);
     window.addEventListener('online', online);
     document.addEventListener('visibilitychange', visible);
+    window.addEventListener('pagehide', unload);
+    window.addEventListener('beforeunload', unload);
     return () => {
       attempt.current += 1;
       wantsPlayback.current = false;
@@ -127,6 +135,8 @@ export function AudioProvider({ children }) {
       window.removeEventListener('offline', offline);
       window.removeEventListener('online', online);
       document.removeEventListener('visibilitychange', visible);
+      window.removeEventListener('pagehide', unload);
+      window.removeEventListener('beforeunload', unload);
       clearTimeout(timer.current);
       clearTimeout(recoveryTimer.current);
     };
@@ -235,7 +245,7 @@ export function AudioProvider({ children }) {
   }
   function toggle() {
     if (!selected.current) return;
-    if (['playing', 'buffering', 'connecting'].includes(status)) pause();
+    if (['playing', 'buffering', 'connecting'].includes(status)) stop();
     else play(selected.current);
   }
   function setSleepTimer(minutes) {
@@ -249,7 +259,7 @@ export function AudioProvider({ children }) {
   }
   return (
     <AudioContext.Provider
-      value={{ station, status, play, toggle, volume, setVolume, sleep, setSleepTimer }}
+      value={{ station, status, play, toggle, stop, volume, setVolume, sleep, setSleepTimer }}
     >
       {children}
     </AudioContext.Provider>

@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Play,
   Pause,
+  Square,
   Heart,
   Plus,
   Headphones,
@@ -359,6 +360,8 @@ function RadioApp() {
   };
   const activeStation = withLive(audio.station || stations[0]);
   const activeIndex = stations.findIndex((s) => s.id === activeStation.id);
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const current = withLive(selected);
   const liveOffAir = live.phase === 'ready' && !live.data.onAir;
   const insecureStream = (s) => isBlockedMixedContent(s.stream, location.protocol);
@@ -520,7 +523,7 @@ function RadioApp() {
                     <Sun size={14} /> A LITTLE SOUND FOR YOUR DAY
                   </div>
                   <h1>
-                    Good afternoon, {firstName}
+                    {greeting}, {firstName}
                     <span className="heading-dot">.</span>
                   </h1>
                   <p>Old favorites. New frequencies. Something that feels like you.</p>
@@ -1164,13 +1167,13 @@ function RadioApp() {
           </IconButton>
           <button
             className="main-play"
-            aria-label={playing ? 'Pause audio' : 'Play audio'}
+            aria-label={playing ? 'Stop audio' : 'Play audio'}
             onClick={() => (playing ? audio.toggle() : play(activeStation))}
           >
             {['connecting', 'buffering'].includes(audio.status) ? (
               <LoaderCircle size={22} className="spin" />
             ) : playing ? (
-              <Pause size={21} fill="currentColor" />
+              <Square size={18} fill="currentColor" />
             ) : (
               <Play size={21} fill="currentColor" />
             )}
@@ -1303,13 +1306,13 @@ function RadioApp() {
               </IconButton>
               <button
                 className="main-play large-play"
-                aria-label={playing ? 'Pause audio' : 'Play audio'}
+                aria-label={playing ? 'Stop audio' : 'Play audio'}
                 onClick={() => (playing ? audio.toggle() : play(activeStation))}
               >
                 {['connecting', 'buffering'].includes(audio.status) ? (
                   <LoaderCircle className="spin" />
                 ) : playing ? (
-                  <Pause size={28} fill="currentColor" />
+                  <Square size={24} fill="currentColor" />
                 ) : (
                   <Play size={28} fill="currentColor" />
                 )}

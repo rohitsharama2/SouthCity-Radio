@@ -90,10 +90,10 @@ test('names, emails, and sign-in return addresses are validated', () => {
   assert.ok(validateEmail('rohit@').error);
   assert.equal(
     authRedirectUrl({ origin: 'https://radio.example', pathname: '/' }, 'admin'),
-    'https://radio.example/?workspace=admin',
+    'https://radio.example/player?workspace=admin',
   );
   assert.equal(
     authRedirectUrl({ origin: 'http://localhost:5180', pathname: '/' }, 'app'),
-    'http://localhost:5180/',
+    'http://localhost:5180/player',
   );
 });
