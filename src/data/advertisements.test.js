@@ -18,6 +18,18 @@ test('ad slots validate required copy, limits, and safe destinations', () => {
     linkUrl: 'https://example.com/offer',
   });
   assert.ok(validateAdvertisements(cards).value);
+  assert.ok(
+    validateAdvertisements([
+      {
+        enabled: true,
+        title: 'Legacy ad',
+        sponsor: 'Legacy sponsor',
+        description: '',
+        imageUrl: '',
+        linkUrl: '',
+      },
+    ]).value,
+  );
   for (const url of [
     'javascript:alert(1)',
     'data:text/html,test',

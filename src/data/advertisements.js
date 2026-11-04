@@ -44,9 +44,10 @@ export function validateAdvertisements(input) {
       linkUrl: 1000,
       whatsappNumber: 30,
     })) {
-      if (typeof card[key] !== 'string' || card[key].trim().length > limit)
+      const raw = card[key] ?? '';
+      if (typeof raw !== 'string' || raw.trim().length > limit)
         return { error: `Card ${index + 1}: ${key} must be text of at most ${limit} characters.` };
-      value[key] = card[key].trim();
+      value[key] = raw.trim();
     }
     if (value.enabled && (!value.title || !value.sponsor))
       return { error: `Card ${index + 1} needs a title and sponsor before enabling it.` };
