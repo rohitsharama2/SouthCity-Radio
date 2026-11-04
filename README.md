@@ -140,6 +140,25 @@ For CI, supply `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KE
 
 Upload the AAB to your app's testing or production release in Play Console and configure [Play App Signing](https://developer.android.com/studio/publish/app-signing). An AAB cannot be installed directly. The APK uses your upload key; if Play uses a different app signing key, it cannot update a Play-installed copy. A release APK also cannot update a debug-key-signed installation. Building these files does not submit the app or complete Play's listing, policy declarations, testing requirements, or review.
 
+### Next Android release
+
+The current release is recorded in [`android/release-version.json`](android/release-version.json). Edit
+`versionName` and increase `versionCode` above the highest code already uploaded to Play Console,
+then run:
+
+```sh
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+npm run android:aab:release
+```
+
+If Homebrew JDK 21 is installed but macOS cannot find it, use:
+
+```sh
+export JAVA_HOME="$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home"
+```
+
+The signed bundle is written to `android/app/build/outputs/bundle/release/app-release.aab`.
+
 ## Production identity
 
 The production domain is **radiosouthcity.com** and the administrative/contact email is **admin@radiosouthcity.com**. The previous Gmail address is being retired.

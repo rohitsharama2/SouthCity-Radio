@@ -18,6 +18,7 @@
     "dev:admin": "vite --mode admin",
     "android:apk:release": "node scripts/android-release.js apk",
     "android:aab": "node scripts/android-release.js aab",
+    "android:aab:release": "node scripts/android-release-configured.js",
     "android:release": "node scripts/android-release.js all"
   },
   "dependencies": {
