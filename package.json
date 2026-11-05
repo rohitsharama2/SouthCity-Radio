@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev.js",
     "build": "vite build",
-    "build:android": "vite build --mode android && cap sync android",
+    "build:android": "vite build --mode android && node scripts/prepare-android-web.js && cap sync android",
     "android:apk": "npm run build:android && cd android && ./gradlew assembleDebug",
     "preview": "vite preview",
     "start": "node server/production.js",

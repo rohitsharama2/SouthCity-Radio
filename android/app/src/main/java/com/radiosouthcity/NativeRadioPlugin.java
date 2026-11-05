@@ -52,6 +52,20 @@ public class NativeRadioPlugin extends Plugin {
         call.resolve();
     }
 
+    @PluginMethod
+    public void setVolume(PluginCall call) {
+        Double volume = call.getDouble("volume");
+        if (volume == null || volume < 0 || volume > 1) {
+            call.reject("Volume must be between 0 and 1");
+            return;
+        }
+        Intent intent = new Intent(getContext(), RadioPlaybackService.class)
+                .setAction(RadioPlaybackService.ACTION_VOLUME)
+                .putExtra(RadioPlaybackService.EXTRA_VOLUME, volume.floatValue());
+        ContextCompat.startForegroundService(getContext(), intent);
+        call.resolve();
+    }
+
     private void send(String action) {
         Intent intent = new Intent(getContext(), RadioPlaybackService.class).setAction(action);
         ContextCompat.startForegroundService(getContext(), intent);

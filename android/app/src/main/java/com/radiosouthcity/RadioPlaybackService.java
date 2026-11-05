@@ -22,10 +22,12 @@ public class RadioPlaybackService extends MediaSessionService {
     public static final String ACTION_PLAY = "com.radiosouthcity.PLAY";
     public static final String ACTION_PAUSE = "com.radiosouthcity.PAUSE";
     public static final String ACTION_STOP = "com.radiosouthcity.STOP";
+    public static final String ACTION_VOLUME = "com.radiosouthcity.VOLUME";
     public static final String EXTRA_URL = "url";
     public static final String EXTRA_TITLE = "title";
     public static final String EXTRA_ARTIST = "artist";
     public static final String EXTRA_ALBUM = "album";
+    public static final String EXTRA_VOLUME = "volume";
     private static final String CHANNEL_ID = "radio-playback";
     private static final int NOTIFICATION_ID = 4202;
 
@@ -86,6 +88,8 @@ public class RadioPlaybackService extends MediaSessionService {
                 player.stop();
                 updatePlaybackState("stopped");
                 stopSelf();
+            } else if (ACTION_VOLUME.equals(action)) {
+                player.setVolume(intent.getFloatExtra(EXTRA_VOLUME, 1f));
             }
         }
         if (player != null && !ACTION_STOP.equals(intent == null ? null : intent.getAction())) {

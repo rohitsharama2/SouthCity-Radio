@@ -163,6 +163,7 @@ export function AudioProvider({ children }) {
   }, []);
   useEffect(() => {
     if (audio.current) audio.current.volume = volume;
+    if (NativeRadio) NativeRadio.setVolume({ volume }).catch(() => {});
   }, [volume]);
   useEffect(() => {
     if (mayListen) return;

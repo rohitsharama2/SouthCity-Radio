@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input:
           mode === 'android'
-            ? { app: 'index.html' }
+            ? { index: 'player/index.html' }
             : { app: 'player/index.html', website: 'index.html' },
       },
     },
