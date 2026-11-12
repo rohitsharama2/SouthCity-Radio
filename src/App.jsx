@@ -107,13 +107,22 @@ function RadioApp() {
   const audio = useAudio();
   const live = useLiveStream();
   const account = useAccount();
+  const [deletedStations, setDeletedStations] = useState([]);
+  useEffect(() => {
+    fetch(serverUrl('/api/stations/catalog'), { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then(({ deleted = [] }) => setDeletedStations(Array.isArray(deleted) ? deleted : []))
+      .catch(() => {});
+  }, []);
+  const catalogStations = stations.filter((station) => !deletedStations.includes(station.id));
   const signedIn = account.phase === 'signed-in';
   const userId = account.user?.id ?? null;
   const withLive = (s) => withLiveMetadata(s, live.data, live.config);
   // Playback and selection use the catalog entry plus any published live settings.
-  const baseStation = (s) => withLiveConfig(stations.find((x) => x.id === s.id) || s, live.config);
+  const baseStation = (s) =>
+    withLiveConfig(catalogStations.find((x) => x.id === s.id) || s, live.config);
   const [page, setPage] = useState(import.meta.env.MODE === 'admin' ? 'Admin' : 'Home'),
-    [selected, setSelected] = useState(stations[0]),
+    [selected, setSelected] = useState(catalogStations[0]),
     [stationReturnPage, setStationReturnPage] = useState('Discover'),
     [query, setQuery] = useState(''),
     [genre, setGenre] = useState('All sounds'),
@@ -220,7 +229,7 @@ function RadioApp() {
       history.replaceState(history.state, '', url.href);
       setPage('Admin');
     } else if (hash.startsWith('station/')) {
-      const s = stations.find((s) => s.id === hash.split('/')[1]);
+      const s = catalogStations.find((s) => s.id === hash.split('/')[1]);
       if (s) {
         setSelected(s);
         setPage('Station');
@@ -360,15 +369,15 @@ function RadioApp() {
         setToast('Could not share. Copy the station URL from your browser.');
     }
   };
-  const activeStation = withLive(audio.station || stations[0]);
-  const activeIndex = stations.findIndex((s) => s.id === activeStation.id);
+  const activeStation = withLive(audio.station || catalogStations[0]);
+  const activeIndex = catalogStations.findIndex((s) => s.id === activeStation.id);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const current = withLive(selected);
   const liveOffAir = live.phase === 'ready' && !live.data.onAir;
   const insecureStream = (s) => isBlockedMixedContent(s.stream, location.protocol);
   const playing = ['playing', 'connecting', 'buffering'].includes(audio.status);
-  const filtered = filterStations(stations.map(withLive), query, genre, language);
+  const filtered = filterStations(catalogStations.map(withLive), query, genre, language);
   if (page === 'Design System')
     return <DesignSystem onExit={() => go('Profile')} theme={theme} setTheme={setTheme} />;
   if (page === 'Admin')
@@ -536,7 +545,7 @@ function RadioApp() {
                         disabled={['connecting', 'buffering'].includes(audio.status)}
                         onClick={() => {
                           if (playing) audio.stop();
-                          else play(stations[0]);
+                          else play(catalogStations[0]);
                         }}
                       >
                         {['connecting', 'buffering'].includes(audio.status) ? (
@@ -657,8 +666,8 @@ function RadioApp() {
                   <Schedule
                     onShow={(show) => {
                       setSelected(
-                        stations.find((s) => s.host === show.host) ||
-                          stations.find((s) => s.id === 'southcity'),
+                        catalogStations.find((s) => s.host === show.host) ||
+                          catalogStations.find((s) => s.id === 'southcity'),
                       );
                       go('Show');
                     }}
@@ -748,7 +757,7 @@ function RadioApp() {
                     />
                     <Schedule
                       onShow={(show) => {
-                        setSelected(stations.find((s) => s.host === show.host) || selected);
+                        setSelected(catalogStations.find((s) => s.host === show.host) || selected);
                         go('Show');
                       }}
                     />
@@ -793,7 +802,7 @@ function RadioApp() {
                             minute: '2-digit',
                           }),
                         }))
-                      : [current, ...stations.filter((s) => s.id !== selected.id && !s.live)]
+                      : [current, ...catalogStations.filter((s) => s.id !== selected.id && !s.live)]
                           .slice(0, 4)
                           .map((s, i) => ({
                             key: s.id,
@@ -818,7 +827,7 @@ function RadioApp() {
               <section className="content-section">
                 <SectionHeading title="Keep the good sounds coming" />
                 <div className="station-grid">
-                  {stations
+                  {catalogStations
                     .filter((s) => s.id !== selected.id)
                     .slice(0, 4)
                     .map(card)}
@@ -927,7 +936,7 @@ function RadioApp() {
               {libraryTab === 'Stations' &&
                 (favorites.length ? (
                   <div className="station-grid">
-                    {stations.filter((s) => favorites.includes(s.id)).map(card)}
+                    {catalogStations.filter((s) => favorites.includes(s.id)).map(card)}
                   </div>
                 ) : (
                   <EmptyState
@@ -940,7 +949,7 @@ function RadioApp() {
                 (history.length ? (
                   <div className="station-grid">
                     {history
-                      .map((id) => stations.find((s) => s.id === id))
+                      .map((id) => catalogStations.find((s) => s.id === id))
                       .filter(Boolean)
                       .map(card)}
                   </div>
@@ -955,7 +964,7 @@ function RadioApp() {
               {libraryTab === 'Shows' &&
                 (followedShows.length ? (
                   <div className="followed-shows">
-                    {stations
+                    {catalogStations
                       .filter((s) => followedShows.includes(s.id))
                       .map((s) => (
                         <button
@@ -981,7 +990,7 @@ function RadioApp() {
                     description="Follow a show to keep it close."
                     action="Explore a show"
                     onAction={() => {
-                      setSelected(stations[0]);
+                      setSelected(catalogStations[0]);
                       go('Show');
                     }}
                   />
@@ -1174,7 +1183,13 @@ function RadioApp() {
           <IconButton
             label="Previous station"
             className="skip-button"
-            onClick={() => play(stations[(activeIndex + stations.length - 1) % stations.length])}
+            onClick={() =>
+              play(
+                catalogStations[
+                  (activeIndex + catalogStations.length - 1) % catalogStations.length
+                ],
+              )
+            }
           >
             <SkipForward size={18} className="flip" />
           </IconButton>
@@ -1194,7 +1209,7 @@ function RadioApp() {
           <IconButton
             label="Next station"
             className="skip-button"
-            onClick={() => play(stations[(activeIndex + 1) % stations.length])}
+            onClick={() => play(catalogStations[(activeIndex + 1) % catalogStations.length])}
           >
             <SkipForward size={18} />
           </IconButton>
