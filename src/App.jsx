@@ -374,7 +374,7 @@ function RadioApp() {
   if (page === 'Admin')
     return <Admin onExit={() => go('Home')} theme={theme} setTheme={setTheme} />;
   return (
-    <div className={`app-shell navigation-hidden ${page === 'Home' ? 'home-listening' : ''}`}>
+    <div className={`app-shell ${page === 'Home' ? 'home-listening' : ''}`}>
       <aside className={`sidebar ${mobileMenu ? 'open' : ''}`}>
         <button
           className="brand-button"
@@ -521,7 +521,8 @@ function RadioApp() {
                 </span>
               </div>
               <AnnouncementTicker />
-              <div className="hero-grid hero-grid-listening">
+              <Advertisements />
+              <div className="hero-grid hero-grid-listening" style={{marginTop: '5px'}}>
                 <section className="hero">
                   <div className="hero-watermark" aria-hidden="true">
                     <Brand variant="badge" />
@@ -563,7 +564,6 @@ function RadioApp() {
                   </div>
                 </section>
               </div>
-              <Advertisements />
             </>
           )}
           {(page === 'Discover' || page === 'Live') && (
@@ -1235,14 +1235,6 @@ function RadioApp() {
           </IconButton>
         </div>
       </div>
-      <nav className="bottom-nav" aria-label="Mobile navigation">
-        {navigation.map(({ name, icon: Icon }) => (
-          <button className={page === name ? 'active' : ''} key={name} onClick={() => go(name)}>
-            <Icon size={21} />
-            <span>{name}</span>
-          </button>
-        ))}
-      </nav>
       {mobileMenu && (
         <button
           className="sidebar-scrim"
@@ -1343,14 +1335,7 @@ function RadioApp() {
                 onChange={(e) => audio.setVolume(Number(e.target.value))}
               />
             </label>
-            <button
-              className="up-next"
-              onClick={() => {
-                setSelected(baseStation(activeStation));
-                setModal(null);
-                go('Station');
-              }}
-            >
+            <div className="up-next" aria-label="Current station">
               {activeStation.live ? (
                 <span>
                   <small>FROM THE STATION</small>
@@ -1364,8 +1349,8 @@ function RadioApp() {
                   </strong>
                 </span>
               )}
-              <ChevronRight size={20} />
-            </button>
+              <span aria-hidden="true" />
+            </div>
             <p className="preview-note">{activeStation.live ? liveStreamNote : demoStreamNote}</p>
           </div>
         </Modal>

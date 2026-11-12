@@ -33,16 +33,36 @@ export default defineConfig(({ mode }) => {
       advertisementsServer({ accounts }),
       announcementsServer({ accounts }),
       {
+        name: 'southcity-player-route',
+        configureServer(server) {
+          server.middlewares.use((request, response, next) => {
+            if (request.url === '/player') {
+              response.statusCode = 302;
+              response.setHeader('Location', '/player/');
+              response.end();
+              return;
+            }
+            next();
+          });
+        },
+      },
+      {
         name: 'southcity-ad-analytics',
-        configureServer: (server) => server.middlewares.use(adAnalyticsMiddleware({ accounts })),
-        configurePreviewServer: (server) =>
-          server.middlewares.use(adAnalyticsMiddleware({ accounts })),
+        configureServer(server) {
+          server.middlewares.use(adAnalyticsMiddleware({ accounts }));
+        },
+        configurePreviewServer(server) {
+          server.middlewares.use(adAnalyticsMiddleware({ accounts }));
+        },
       },
       {
         name: 'southcity-stations',
-        configureServer: (server) => server.middlewares.use(stationsMiddleware({ accounts })),
-        configurePreviewServer: (server) =>
-          server.middlewares.use(stationsMiddleware({ accounts })),
+        configureServer(server) {
+          server.middlewares.use(stationsMiddleware({ accounts }));
+        },
+        configurePreviewServer(server) {
+          server.middlewares.use(stationsMiddleware({ accounts }));
+        },
       },
     ],
     server: {
