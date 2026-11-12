@@ -2,11 +2,19 @@ import React from 'react';
 import { Radio, Play, Heart, ArrowUpRight, X, Headphones, Music2 } from 'lucide-react';
 import { compactListeners, nowPlayingText } from '../data/liveStream.js';
 import logoBadge from '../assets/brand/southcity-logo.svg?raw';
+import logoBadgeImage from '../assets/brand/southcity-badge.png';
 import logoLockup from '../assets/brand/southcity-lockup.svg?raw';
 import logoMark from '../assets/brand/southcity-mark.svg?raw';
 // Outlined SVG logos, inlined so --logo-ink/--logo-accent follow the active theme.
 const logos = { badge: logoBadge, lockup: logoLockup, mark: logoMark };
 export function Brand({ compact = false, variant = compact ? 'mark' : 'lockup' }) {
+  if (variant === 'badge') {
+    return (
+      <span className="brand brand-badge">
+        <img src={logoBadgeImage} alt="Radio South City" />
+      </span>
+    );
+  }
   return (
     <span
       className={`brand brand-${variant}`}

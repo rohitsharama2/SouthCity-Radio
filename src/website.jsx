@@ -87,6 +87,11 @@ const team = [
     "CEO and COO of her home, Priyadarshini is passionate about travel planning, punctuality and attention to detail. An avid reader, baker, travel writer and shloka teacher, she's now a part of Radio South City, hosting a talk-show.",
   ],
   [
+    'Neha',
+    'neha.jpeg',
+    "Hi, I'm Neha! With nearly 20 years of experience in the IT industry, I enjoy balancing my professional journey with my love for sports, nature, mountains, arts and creativity. I love exploring new things, volunteering and connecting with people. Always curious, enthusiastic and happy to be part of activities that bring people together!",
+  ],
+  [
     'Nisha',
     'nisha.jpeg',
     'A marketer with a restless creative streak and a serious soft spot for good food. Nisha shapes stories, brands and campaigns, and spends her free time cooking, painting, or planning trips that become the next marketing idea.',

@@ -132,7 +132,8 @@ input::placeholder {
   display: inline-flex;
   line-height: 0;
 }
-.brand svg {
+.brand svg,
+.brand img {
   display: block;
   height: 100%;
   width: auto;
