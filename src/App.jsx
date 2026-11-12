@@ -114,6 +114,7 @@ function RadioApp() {
   const baseStation = (s) => withLiveConfig(stations.find((x) => x.id === s.id) || s, live.config);
   const [page, setPage] = useState(import.meta.env.MODE === 'admin' ? 'Admin' : 'Home'),
     [selected, setSelected] = useState(stations[0]),
+    [stationReturnPage, setStationReturnPage] = useState('Discover'),
     [query, setQuery] = useState(''),
     [genre, setGenre] = useState('All sounds'),
     [language, setLanguage] = useState('All languages'),
@@ -257,6 +258,7 @@ function RadioApp() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
   const openStation = (s) => {
+    setStationReturnPage(page === 'Station' ? stationReturnPage : page);
     setSelected(baseStation(s));
     go('Station');
   };
@@ -416,20 +418,6 @@ function RadioApp() {
           </span>
           <div>
             Favorite stations<small>{favorites.length} stations</small>
-          </div>
-        </button>
-        <button
-          className="collection-link"
-          onClick={() => {
-            setLibraryTab('Recently played');
-            go('Library');
-          }}
-        >
-          <span className="collection-icon">
-            <Clock size={16} />
-          </span>
-          <div>
-            Recently played<small>Your listening history</small>
           </div>
         </button>
         <div className="sidebar-bottom">
@@ -678,8 +666,9 @@ function RadioApp() {
           )}
           {page === 'Station' && (
             <>
-              <button className="back-link" onClick={() => go('Discover')}>
-                <ChevronLeft size={16} /> Back to discovery
+              <button className="back-link" onClick={() => go(stationReturnPage)}>
+                <ChevronLeft size={16} /> Back to{' '}
+                {stationReturnPage === 'Home' ? 'home' : stationReturnPage.toLowerCase()}
               </button>
               <div className="detail-hero">
                 <Artwork station={selected} />
@@ -1010,6 +999,9 @@ function RadioApp() {
           )}
           {page === 'Profile' && (
             <>
+              <button className="back-link" onClick={() => go('Home')}>
+                <ChevronLeft size={16} /> Back to home
+              </button>
               <div className="page-intro">
                 <div className="eyebrow">MAKE YOURSELF AT HOME</div>
                 <h1>Your profile.</h1>
@@ -1041,7 +1033,7 @@ function RadioApp() {
                 </div>
                 <div>
                   <strong>{history.length}</strong>
-                  <span>Stations explored</span>
+                  <span>Recently played</span>
                 </div>
                 <div>
                   <strong>{followedShows.length}</strong>

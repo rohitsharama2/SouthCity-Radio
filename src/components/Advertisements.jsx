@@ -10,6 +10,14 @@ import {
 } from '../data/advertisements.js';
 import { serverUrl } from './server.js';
 import { accessToken } from './useAccount.js';
+export function trackAdvertisement(adIndex, action) {
+  fetch(serverUrl('/api/advertisement-analytics'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ adIndex, action }),
+    keepalive: true,
+  }).catch(() => {});
+}
 
 export async function loadAdvertisements(signal) {
   const response = await fetch(serverUrl(advertisementsPath), { cache: 'no-store', signal });
@@ -35,7 +43,7 @@ export async function publishAdvertisements(cards) {
   if (!value) throw new Error('The server did not confirm the advertisements.');
   return value;
 }
-export function AdvertisementCard({ card, index, onOpen }) {
+export function AdvertisementCard({ card, index, onOpen, onTrack = trackAdvertisement }) {
   const [failedImage, setFailedImage] = useState('');
   const imageUrl = publicAdUrl(card.imageUrl);
   const linkUrl = publicAdUrl(card.linkUrl);
@@ -87,6 +95,7 @@ export function AdvertisementCard({ card, index, onOpen }) {
           target="_blank"
           rel="noopener noreferrer sponsored"
           aria-label={`Visit ${card.sponsor} (opens in a new tab)`}
+          onClick={() => onTrack(index, 'website')}
         >
           Visit {card.sponsor}
           <ArrowUpRight size={14} aria-hidden="true" />
@@ -99,6 +108,7 @@ export function AdvertisementCard({ card, index, onOpen }) {
           target="_blank"
           rel="noopener noreferrer sponsored"
           aria-label={`Message ${card.sponsor} on WhatsApp (opens in a new tab)`}
+          onClick={() => onTrack(index, 'whatsapp')}
         >
           <MessageCircle size={15} aria-hidden="true" /> Message on WhatsApp
         </a>
@@ -150,7 +160,10 @@ export default function Advertisements() {
             key={index}
             card={card}
             index={index}
-            onOpen={() => setSelected({ card, index })}
+            onOpen={() => {
+              trackAdvertisement(index, 'open');
+              setSelected({ card, index });
+            }}
           />
         ))}
       </div>

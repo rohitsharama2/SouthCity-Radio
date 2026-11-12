@@ -4,6 +4,8 @@ import { advertisementsServer } from './server/advertisements.js';
 import { workspacePorts } from './src/data/workspaces.js';
 import { liveStationServer } from './server/liveStation.js';
 import { accountsServer, createAccounts } from './server/accounts.js';
+import { stationsMiddleware } from './server/stations.js';
+import { adAnalyticsMiddleware } from './server/adAnalytics.js';
 
 export default defineConfig(({ mode }) => {
   // SUPABASE_* values stay server-side: Vite only bundles VITE_-prefixed variables, and the app
@@ -30,6 +32,18 @@ export default defineConfig(({ mode }) => {
       liveStationServer({ accounts }),
       advertisementsServer({ accounts }),
       announcementsServer({ accounts }),
+      {
+        name: 'southcity-ad-analytics',
+        configureServer: (server) => server.middlewares.use(adAnalyticsMiddleware({ accounts })),
+        configurePreviewServer: (server) =>
+          server.middlewares.use(adAnalyticsMiddleware({ accounts })),
+      },
+      {
+        name: 'southcity-stations',
+        configureServer: (server) => server.middlewares.use(stationsMiddleware({ accounts })),
+        configurePreviewServer: (server) =>
+          server.middlewares.use(stationsMiddleware({ accounts })),
+      },
     ],
     server: {
       host: '0.0.0.0',

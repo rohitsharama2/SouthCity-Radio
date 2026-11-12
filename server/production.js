@@ -5,6 +5,8 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { accountsMiddleware, createAccounts } from './accounts.js';
 import { liveStationMiddleware } from './liveStation.js';
+import { stationsMiddleware } from './stations.js';
+import { adAnalyticsMiddleware } from './adAnalytics.js';
 
 // Hosted SouthCity server: serves the built web app (npm run build) and the same API as the
 // Vite dev and preview servers, for browsers and the Android app. Accounts use SUPABASE_URL and
@@ -28,6 +30,8 @@ const accounts = createAccounts(process.env);
 const api = [
   accountsMiddleware(accounts),
   liveStationMiddleware({ accounts }),
+  stationsMiddleware({ accounts }),
+  adAnalyticsMiddleware({ accounts }),
   advertisementsMiddleware({ accounts }),
   announcementsMiddleware({ accounts }),
 ];

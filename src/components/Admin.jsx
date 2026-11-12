@@ -51,7 +51,8 @@ import { stations, schedule } from '../data/stations.js';
 import '../styles/admin.css';
 import { readLocal as saved, writeLocal } from '../data/storage.js';
 import { useLiveStream, refreshLiveStream, publishLiveStation } from './useLiveStream.js';
-import { useAccount, signOut, retryProfile } from './useAccount.js';
+import { useAccount, signOut, retryProfile, accessToken } from './useAccount.js';
+import { serverUrl } from './server.js';
 import { SignInForm } from './SignIn.jsx';
 import { canPublish, isStaff, roleLabels } from '../data/accounts.js';
 import {
@@ -117,6 +118,7 @@ export default function Admin({ onExit, theme, setTheme }) {
     [media, setMedia] = useState([]),
     [dismissed, setDismissed] = useState(false),
     [activity, setActivity] = useState([]),
+    [adAnalytics, setAdAnalytics] = useState([]),
     [djs, setDjs] = useState(() =>
       saved(
         'sc-admin-djs',
@@ -191,6 +193,30 @@ export default function Admin({ onExit, theme, setTheme }) {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+  React.useEffect(() => {
+    fetch(serverUrl('/api/stations/catalog'))
+      .then((response) =>
+        response.ok
+          ? response.json()
+          : Promise.reject(new Error('Station catalog could not be loaded.')),
+      )
+      .then(({ deleted = [] }) => {
+        setDeletedStations((current) => [...new Set([...current, ...deleted])]);
+      })
+      .catch(() => {});
+  }, []);
+  React.useEffect(() => {
+    if (view !== 'Analytics') return;
+    accessToken()
+      .then((token) =>
+        fetch(serverUrl('/api/advertisement-analytics'), {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }),
+      )
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then(({ events }) => setAdAnalytics(events || []))
+      .catch(() => setAdAnalytics([]));
+  }, [view]);
   const notify = (message) => {
     setToast(message);
     setActivity((a) =>
@@ -225,14 +251,28 @@ export default function Admin({ onExit, theme, setTheme }) {
       !deletedStations.includes(s.id) &&
       [stationName(s), s.genre, s.host].join(' ').toLowerCase().includes(query.toLowerCase()),
   );
-  const deleteStation = (s) => {
+  const deleteStation = async (s) => {
     if (s.live) {
       notify('SouthCity Live is the published station and cannot be deleted here.');
       return;
     }
-    const next = [...new Set([...deletedStations, s.id])];
-    persist('sc-admin-deleted-stations', next, setDeletedStations);
-    notify(`${stationName(s)} removed from this local admin preview`);
+    try {
+      const token = await accessToken();
+      const response = await fetch(
+        `${serverUrl(`/api/stations/catalog?id=${encodeURIComponent(s.id)}`)}`,
+        {
+          method: 'DELETE',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Station deletion failed.');
+      const next = [...new Set([...deletedStations, s.id])];
+      persist('sc-admin-deleted-stations', next, setDeletedStations);
+      notify(`${stationName(s)} deleted from the station catalog`);
+    } catch (error) {
+      notify(error.message);
+    }
   };
   const exportReport = () => {
     const csv =
@@ -514,6 +554,41 @@ export default function Admin({ onExit, theme, setTheme }) {
         ))}
       </div>
       <ListenerChart range={range} />
+      <section className="admin-panel">
+        <div className="panel-heading">
+          <h2>Advertisement engagement</h2>
+          <span>{adAnalytics.length} tracked actions</span>
+        </div>
+        <div className="table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Advertisement</th>
+                <th>Opened</th>
+                <th>Website</th>
+                <th>WhatsApp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 20 }, (_, index) => {
+                const events = adAnalytics.filter((event) => event.ad_index === index);
+                if (!events.length) return null;
+                return (
+                  <tr key={index}>
+                    <td>Advertisement {index + 1}</td>
+                    <td>{events.filter((event) => event.action === 'open').length}</td>
+                    <td>{events.filter((event) => event.action === 'website').length}</td>
+                    <td>{events.filter((event) => event.action === 'whatsapp').length}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {!adAnalytics.length && (
+          <p className="admin-info">No advertisement engagement has been recorded yet.</p>
+        )}
+      </section>
       <div className="analytics-lower">
         <section className="admin-panel">
           <div className="panel-heading">
