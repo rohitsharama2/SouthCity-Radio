@@ -7,7 +7,7 @@
     "dev": "node scripts/dev.js",
     "build": "vite build",
     "build:android": "vite build --mode android && node scripts/prepare-android-web.js && cap sync android",
-    "android:apk": "npm run build:android && cd android && ./gradlew assembleDebug",
+    "android:apk": "npm run build:android && node scripts/run-gradle.js assembleDebug",
     "preview": "vite preview",
     "start": "node server/production.js",
     "test": "node --test src/data/*.test.js server/*.test.js",

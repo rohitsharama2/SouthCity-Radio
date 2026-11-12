@@ -28,12 +28,16 @@ function run(command, args, cwd) {
   if (result.error || result.status !== 0) process.exit(result.status || 1);
 }
 
-const gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const gradle = [process.execPath, path.join(root, 'scripts/run-gradle.js')];
 // Fail before rebuilding web assets if signing has not been configured.
-run(gradle, ['--no-daemon', ':app:validateReleaseConfiguration'], android);
+run(gradle[0], [...gradle.slice(1), '--no-daemon', ':app:validateReleaseConfiguration'], root);
 run(npm, ['run', 'build:android'], root);
-run(gradle, ['--no-daemon', ...targets[target].map((task) => `:app:${task}`)], android);
+run(
+  gradle[0],
+  [...gradle.slice(1), '--no-daemon', ...targets[target].map((task) => `:app:${task}`)],
+  root,
+);
 
 const artifacts = [];
 if (target !== 'aab') artifacts.push('apk/release/app-release.apk');

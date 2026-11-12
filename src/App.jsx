@@ -381,7 +381,7 @@ function RadioApp() {
           aria-label="Radio South City home"
           onClick={() => go('Home')}
         >
-          <Brand />
+          <Brand variant="lockup" />
         </button>
         <div className="sidebar-section-label">YOUR DAILY SOUNDTRACK</div>
         <nav className="main-nav" aria-label="Main navigation">
@@ -462,7 +462,7 @@ function RadioApp() {
               aria-label="Radio South City home"
               onClick={() => go('Home')}
             >
-              <Brand />
+              <Brand variant="lockup" />
             </button>
           </div>
           <div className="breadcrumb">
@@ -522,7 +522,7 @@ function RadioApp() {
               </div>
               <AnnouncementTicker />
               <Advertisements />
-              <div className="hero-grid hero-grid-listening" style={{marginTop: '5px'}}>
+              <div className="hero-grid hero-grid-listening" style={{ marginTop: '5px' }}>
                 <section className="hero">
                   <div className="hero-watermark" aria-hidden="true">
                     <Brand variant="badge" />

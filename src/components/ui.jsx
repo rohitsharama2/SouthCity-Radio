@@ -1,27 +1,24 @@
 import React from 'react';
 import { Radio, Play, Heart, ArrowUpRight, X, Headphones, Music2 } from 'lucide-react';
 import { compactListeners, nowPlayingText } from '../data/liveStream.js';
-import logoBadge from '../assets/brand/southcity-logo.svg?raw';
+import logoBadge from '../assets/brand/southcity-badge.png';
 import logoLockup from '../assets/brand/southcity-lockup.svg?raw';
 import logoMark from '../assets/brand/southcity-mark.svg?raw';
-// Outlined SVG logos, inlined so --logo-ink/--logo-accent follow the active theme.
+// The supplied transparent badge is used in the player; browser navigation keeps
+// its original horizontal lockup and compact mark.
 const logos = { badge: logoBadge, lockup: logoLockup, mark: logoMark };
-export function Brand({ compact = false, variant = compact ? 'mark' : 'lockup' }) {
+export function Brand({ compact = false, variant = 'badge' }) {
   if (variant === 'badge') {
     return (
-      <span
-        className="brand brand-badge"
-        role="img"
-        aria-label="Radio South City"
-        dangerouslySetInnerHTML={{ __html: logoBadge }}
-      />
+      <span className="brand brand-badge" role="img" aria-label="Radio South City">
+        <img src={logoBadge} alt="" />
+      </span>
     );
   }
   return (
-    <span
-      className={`brand brand-${variant}`}
-      dangerouslySetInnerHTML={{ __html: logos[variant] }}
-    />
+    <span className={`brand brand-${variant}`}>
+      <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: logos[variant] }} />
+    </span>
   );
 }
 export function IconButton({ label, children, className = '', ...props }) {
