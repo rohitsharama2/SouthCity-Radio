@@ -13,6 +13,7 @@ export const liveStationDefaults = {
 };
 export const liveServer = new URL(liveStationDefaults.streamUrl).origin;
 export const azuraStationId = 728;
+const azuraStationHosts = new Set(['a10.asurahosting.com', '85.25.185.202']);
 export const stationGenres = ['Eclectic', 'Jazz', 'Indie', 'Chill', 'Soul', 'Electronic'];
 export const stationLanguages = ['English', 'Instrumental', 'Multilingual'];
 // The stream's metadata endpoints send no CORS headers, so the app reads them through the
@@ -34,7 +35,7 @@ export const azuraNowPlayingUrl = (streamUrl) => {
     if (match) return `${url.origin}/api/nowplaying/${encodeURIComponent(match[1])}`;
     // SouthCity's public stream URL does not include the AzuraCast shortcode.
     // Keep the station mapping here rather than sending dashboard cookies to clients.
-    return url.origin === liveServer
+    return azuraStationHosts.has(url.hostname.toLowerCase())
       ? `${url.protocol}//${url.hostname}/api/nowplaying/${azuraStationId}`
       : null;
   } catch {

@@ -3019,7 +3019,7 @@ select {
     font-size: 19px;
   }
   .player-bar {
-    bottom: calc(62px + env(safe-area-inset-bottom));
+    bottom: env(safe-area-inset-bottom);
     height: var(--player-height);
     padding: 0 13px;
     gap: 7px;

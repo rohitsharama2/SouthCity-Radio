@@ -517,7 +517,10 @@ function RadioApp() {
                   <p>Old favorites. New frequencies. Something that feels like you.</p>
                 </div>
                 <span className="date-pill">
-                  <span className="status-dot" /> Broadcasting good energy
+                  <span className="status-dot" />
+                  {live.phase === 'ready' && live.data?.listeners != null
+                    ? `${formatListeners(live.data.listeners)} listening live`
+                    : 'Broadcasting good energy'}
                 </span>
               </div>
               <AnnouncementTicker />

@@ -81,6 +81,13 @@ test('parses AzuraCast Now Playing responses and derives its public API URL', ()
   );
 });
 
+test('uses the mapped SouthCity station for its configured stream host', () => {
+  assert.equal(
+    azuraNowPlayingUrl('http://85.25.185.202:8665/stream'),
+    'http://85.25.185.202/api/nowplaying/728',
+  );
+});
+
 test('parses AzuraCast song history from the Now Playing response', () => {
   assert.deepEqual(
     parseHistory({
