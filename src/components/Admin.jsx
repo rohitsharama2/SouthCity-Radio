@@ -643,7 +643,7 @@ export default function Admin({ onExit, theme, setTheme }) {
     <div className="admin-shell">
       <aside className={`admin-sidebar ${menu ? 'open' : ''}`}>
         <button className="brand-button" onClick={onExit}>
-          <Brand />
+          <Brand variant="lockup" />
         </button>
         <span className="admin-workspace-label">BROADCAST WORKSPACE</span>
         <button
